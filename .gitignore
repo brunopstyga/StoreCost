@@ -1,0 +1,30 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+local.properties
+.navigation/
+captures/
+
+# macOS
+.DS_Store
+
+# iOS / Xcode
+*.xcworkspace
+xcuserdata/
+*.moved-aside
+DerivedData/
+.build/
+
+# Kotlin / KMP
+.kotlin/
+kotlin-js-store/
+
+# Keys & Secrets
+*.keystore
+*.jks
+*.p12

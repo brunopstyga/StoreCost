@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Store Cost</string>
+
+    <!-- Notificaciones -->
+    <string name="notification_channel_name">Reportes mensuales</string>
+    <string name="notification_channel_description">Avisos cuando el reporte mensual está listo para enviar.</string>
+    <string name="notification_title">Reporte mensual listo</string>
+    <string name="notification_text">Reporte de %1$s generado. Toca para enviarlo por correo.</string>
+
+    <!-- Correo -->
+    <string name="email_subject">Reporte Mensual de Ventas - Store Cost</string>
+    <string name="email_chooser_title">Enviar reporte mensual</string>
+    <string name="email_file_missing">No se encontró el archivo del reporte.</string>
+    <string name="email_open_failed">No se pudo abrir una aplicación de correo: %1$s</string>
+</resources>
