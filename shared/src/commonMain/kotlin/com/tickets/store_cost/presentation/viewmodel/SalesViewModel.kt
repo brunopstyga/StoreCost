@@ -12,6 +12,10 @@ import com.tickets.store_cost.domain.usecase.CloseDayUseCase
 import com.tickets.store_cost.domain.usecase.GetDailyClosingUseCase
 import com.tickets.store_cost.domain.usecase.GetSalesSummaryUseCase
 import com.tickets.store_cost.domain.usecase.RegisterSaleUseCase
+import com.tickets.store_cost.domain.util.roundToCents
+import com.tickets.store_cost.domain.util.todayIn
+import com.tickets.store_cost.domain.util.toDayRange
+import com.tickets.store_cost.domain.util.toMonthRange
 import com.tickets.store_cost.presentation.state.ClosingPeriod
 import com.tickets.store_cost.presentation.state.SalesUiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,16 +30,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.atTime
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlin.math.round
 import org.koin.android.annotation.KoinViewModel
 
 /**
@@ -160,8 +154,8 @@ class SalesViewModel(
         viewModelScope.launch {
             formState.update { it.copy(registerState = Result.Loading) }
 
-            val unitPrice = round(amount * 100.0) / 100.0
-            val subtotal = round((unitPrice * quantity) * 100.0) / 100.0
+            val unitPrice = amount.roundToCents()
+            val subtotal = (unitPrice * quantity).roundToCents()
 
             val result = registerSaleUseCase(
                 Sale(
@@ -253,28 +247,10 @@ class SalesViewModel(
      * usando kotlinx-datetime. El historial usa el rango completo para incluir
      * todas las transacciones sin importar la fecha.
      */
-    private fun rangeFor(period: ClosingPeriod): Pair<Long, Long> {
-        if (period == ClosingPeriod.HISTORY) {
-            return Long.MIN_VALUE to Long.MAX_VALUE
-        }
-
-        val timeZone = TimeZone.currentSystemDefault()
-        val today = Clock.System.now().toLocalDateTime(timeZone).date
-
-        val startDate = when (period) {
-            ClosingPeriod.DAILY -> today
-            ClosingPeriod.MONTHLY -> LocalDate(today.year, today.month, 1)
-            ClosingPeriod.HISTORY -> return Long.MIN_VALUE to Long.MAX_VALUE
-        }
-        val endDate = when (period) {
-            ClosingPeriod.DAILY -> today
-            ClosingPeriod.MONTHLY -> startDate.plus(DatePeriod(months = 1)).minus(DatePeriod(days = 1))
-            ClosingPeriod.HISTORY -> return Long.MIN_VALUE to Long.MAX_VALUE
-        }
-
-        val start = startDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
-        val end = endDate.atTime(23, 59, 59, 999_999_999).toInstant(timeZone).toEpochMilliseconds()
-        return start to end
+    private fun rangeFor(period: ClosingPeriod): Pair<Long, Long> = when (period) {
+        ClosingPeriod.HISTORY -> Long.MIN_VALUE to Long.MAX_VALUE
+        ClosingPeriod.DAILY -> todayIn().toDayRange()
+        ClosingPeriod.MONTHLY -> todayIn().toMonthRange()
     }
 
     private companion object {

@@ -21,3 +21,11 @@ fun OperationType.displayName(): String = when (this) {
     OperationType.LOTE_110 -> stringResource(Res.string.operation_lote_110)
     OperationType.EFECTIVO_NEGRO -> stringResource(Res.string.operation_efectivo_negro)
 }
+
+/**
+ * Resuelve el nombre legible a partir del valor persistido de la modalidad.
+ * Si el valor no corresponde a una modalidad conocida, se devuelve tal cual.
+ */
+@Composable
+fun operationTypeDisplayName(raw: String): String =
+    OperationType.entries.firstOrNull { it.name == raw }?.displayName() ?: raw

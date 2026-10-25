@@ -10,7 +10,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,9 +19,9 @@ import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.SalesSummary
 import com.tickets.store_cost.domain.model.getOrNull
 import com.tickets.store_cost.presentation.state.ReportUiState
-import com.tickets.store_cost.presentation.util.displayName
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatMonthYear
+import com.tickets.store_cost.presentation.util.operationTypeDisplayName
 import com.tickets.store_cost.resources.Res
 import com.tickets.store_cost.resources.common_operations
 import com.tickets.store_cost.resources.monthly_average_ticket
@@ -67,15 +66,11 @@ fun MonthlySummarySection(
         )
 
         if (summary is Result.Loading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            LoadingBar()
         }
 
         (summary as? Result.Error)?.let { error ->
-            Text(
-                text = error.message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            ErrorMessage(error.message)
         }
 
         if (summary is Result.Success) {
@@ -140,15 +135,11 @@ fun MonthlySummarySection(
         }
 
         if (reportState is ReportUiState.Loading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            LoadingBar()
         }
 
         (reportState as? ReportUiState.Error)?.let { error ->
-            Text(
-                text = error.message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            ErrorMessage(error.message)
         }
     }
 }

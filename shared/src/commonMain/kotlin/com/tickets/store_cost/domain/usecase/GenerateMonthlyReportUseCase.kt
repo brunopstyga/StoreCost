@@ -1,22 +1,16 @@
 package com.tickets.store_cost.domain.usecase
 
+import com.tickets.store_cost.core.util.formatDateTime
 import com.tickets.store_cost.domain.model.MonthlyReport
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
 import com.tickets.store_cost.domain.repository.ISaleRepository
+import com.tickets.store_cost.domain.util.roundToCents
+import com.tickets.store_cost.domain.util.toMonthRange
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.atTime
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 import kotlin.math.abs
-import kotlin.math.round
 import kotlin.math.roundToLong
 import org.koin.core.annotation.Factory
 
@@ -40,15 +34,7 @@ class GenerateMonthlyReportUseCase(
             return Result.Error("El mes debe estar entre 1 y 12.")
         }
 
-        val startDate = LocalDate(year, month, 1)
-        val endDate = startDate
-            .plus(DatePeriod(months = 1))
-            .minus(DatePeriod(days = 1))
-        val startTime = startDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
-        val endTime = endDate
-            .atTime(23, 59, 59, 999_999_999)
-            .toInstant(timeZone)
-            .toEpochMilliseconds()
+        val (startTime, endTime) = LocalDate(year, month, 1).toMonthRange(timeZone)
 
         return when (val salesResult = saleRepository.getSalesByDateRange(startTime, endTime).first()) {
             is Result.Success -> {
@@ -58,7 +44,7 @@ class GenerateMonthlyReportUseCase(
                         fileName = "reporte_ventas_${year}_${month.toString().padStart(2, '0')}.csv",
                         content = buildCsv(sales, timeZone),
                         salesCount = sales.size,
-                        totalAmount = round(sales.sumOf { it.subtotal } * 100.0) / 100.0
+                        totalAmount = sales.sumOf { it.subtotal }.roundToCents()
                     )
                 )
             }
@@ -74,7 +60,7 @@ class GenerateMonthlyReportUseCase(
             appendLine(
                 listOf(
                     sale.id.toString(),
-                    formatDate(sale.timestamp, timeZone),
+                    formatDateTime(sale.timestamp, timeZone),
                     escapeCsv(sale.operationType.name),
                     formatDecimal(sale.unitPrice),
                     sale.quantity.toString(),
@@ -82,15 +68,6 @@ class GenerateMonthlyReportUseCase(
                 ).joinToString(",")
             )
         }
-    }
-
-    private fun formatDate(timestamp: Long, timeZone: TimeZone): String {
-        val dateTime = Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(timeZone)
-        val day = dateTime.dayOfMonth.toString().padStart(2, '0')
-        val month = dateTime.monthNumber.toString().padStart(2, '0')
-        val hour = dateTime.hour.toString().padStart(2, '0')
-        val minute = dateTime.minute.toString().padStart(2, '0')
-        return "$day/$month/${dateTime.year} $hour:$minute"
     }
 
     private fun formatDecimal(value: Double): String {

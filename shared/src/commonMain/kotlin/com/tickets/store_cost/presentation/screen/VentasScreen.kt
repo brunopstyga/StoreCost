@@ -2,7 +2,6 @@ package com.tickets.store_cost.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,9 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -27,18 +24,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tickets.store_cost.domain.util.toDayRange
+import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
+import com.tickets.store_cost.presentation.screen.components.ErrorMessage
+import com.tickets.store_cost.presentation.screen.components.LoadingBar
 import com.tickets.store_cost.presentation.screen.components.MonthlySummarySection
+import com.tickets.store_cost.presentation.screen.components.SuccessMessage
 import com.tickets.store_cost.presentation.screen.components.TransactionHistorySection
 import com.tickets.store_cost.presentation.state.ClosingPeriod
 import com.tickets.store_cost.presentation.state.ReportUiState
 import com.tickets.store_cost.presentation.state.SalesUiState
 import com.tickets.store_cost.presentation.util.formatCurrency
-import com.tickets.store_cost.presentation.util.formatDateRange
 import com.tickets.store_cost.presentation.util.formatTimestamp
 import com.tickets.store_cost.presentation.viewmodel.ReportViewModel
 import com.tickets.store_cost.presentation.viewmodel.SalesViewModel
@@ -52,14 +52,12 @@ import com.tickets.store_cost.resources.period_daily
 import com.tickets.store_cost.resources.period_history
 import com.tickets.store_cost.resources.period_monthly
 import com.tickets.store_cost.resources.sales_amount_label
-import com.tickets.store_cost.resources.sales_change_date
 import com.tickets.store_cost.resources.sales_closing_button
 import com.tickets.store_cost.resources.sales_closing_saved
 import com.tickets.store_cost.resources.sales_closing_saving
 import com.tickets.store_cost.resources.sales_closing_total
 import com.tickets.store_cost.resources.sales_closing_total_today
 import com.tickets.store_cost.resources.sales_confirm_closing_title
-import com.tickets.store_cost.resources.sales_period
 import com.tickets.store_cost.resources.sales_register_button
 import com.tickets.store_cost.resources.sales_register_title
 import com.tickets.store_cost.resources.sales_registered_success
@@ -68,8 +66,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -234,15 +230,11 @@ private fun DailySalesContent(
     onRequestCloseDay: () -> Unit
 ) {
     if (state.isLoading) {
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        LoadingBar()
     }
 
     state.historyErrorMessage?.let { message ->
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        ErrorMessage(message)
     }
 
     Text(
@@ -250,22 +242,18 @@ private fun DailySalesContent(
         style = MaterialTheme.typography.titleMedium
     )
 
-    OutlinedTextField(
+    AppOutlinedTextField(
         value = state.amount,
         onValueChange = onAmountChange,
-        label = { Text(stringResource(Res.string.sales_amount_label)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth()
+        label = stringResource(Res.string.sales_amount_label),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
     )
 
-    OutlinedTextField(
+    AppOutlinedTextField(
         value = state.quantity,
         onValueChange = onQuantityChange,
-        label = { Text(stringResource(Res.string.common_quantity_label)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth()
+        label = stringResource(Res.string.common_quantity_label),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
 
     Button(
@@ -277,19 +265,11 @@ private fun DailySalesContent(
     }
 
     if (state.isRegistered) {
-        Text(
-            text = stringResource(Res.string.sales_registered_success),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        SuccessMessage(stringResource(Res.string.sales_registered_success))
     }
 
     state.registerErrorMessage?.let { message ->
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        ErrorMessage(message)
     }
 
     Button(
@@ -336,11 +316,7 @@ private fun DailySalesContent(
     }
 
     state.closingErrorMessage?.let { message ->
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        ErrorMessage(message)
     }
 }
 
@@ -368,10 +344,7 @@ private fun SalesDatePicker(
                         val date = Instant.fromEpochMilliseconds(millis)
                             .toLocalDateTime(TimeZone.UTC)
                             .date
-                        val start = date.atStartOfDayIn(timeZone).toEpochMilliseconds()
-                        val end = date.atTime(23, 59, 59, 999_999_999)
-                            .toInstant(timeZone)
-                            .toEpochMilliseconds()
+                        val (start, end) = date.toDayRange(timeZone)
                         onDateSelected(start, end)
                     }
                 }

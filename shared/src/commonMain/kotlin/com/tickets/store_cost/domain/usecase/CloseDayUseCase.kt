@@ -4,14 +4,12 @@ import com.tickets.store_cost.domain.model.DailyClosing
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.repository.IClosingRepository
 import com.tickets.store_cost.domain.repository.ISaleRepository
+import com.tickets.store_cost.domain.util.roundToCents
+import com.tickets.store_cost.domain.util.todayIn
+import com.tickets.store_cost.domain.util.toDayRange
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlin.math.round
 import org.koin.core.annotation.Factory
 
 /**
@@ -31,9 +29,8 @@ class CloseDayUseCase(
     suspend fun calculateDailyClosing(): Result<DailyClosing> {
         val timeZone = TimeZone.currentSystemDefault()
         val now = Clock.System.now()
-        val today = now.toLocalDateTime(timeZone).date
-        val start = today.atStartOfDayIn(timeZone).toEpochMilliseconds()
-        val end = today.atTime(23, 59, 59, 999_999_999).toInstant(timeZone).toEpochMilliseconds()
+        val today = todayIn(timeZone)
+        val (start, end) = today.toDayRange(timeZone)
 
         return when (val result = saleRepository.getSalesByDateRange(start, end).first()) {
             is Result.Success -> {
@@ -41,7 +38,7 @@ class CloseDayUseCase(
                 if (sales.isEmpty()) {
                     Result.Error("No hay ventas registradas para el día de hoy.")
                 } else {
-                    val total = round(sales.sumOf { it.subtotal } * 100.0) / 100.0
+                    val total = sales.sumOf { it.subtotal }.roundToCents()
                     Result.Success(
                         DailyClosing(
                             closingDate = today.toString(),

@@ -3,6 +3,7 @@ package com.tickets.store_cost.data.repository
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
+import com.tickets.store_cost.domain.model.resultOf
 import com.tickets.store_cost.domain.repository.ISaleRepository
 import com.tickets.store_cost.data.local.dao.SaleDao
 import com.tickets.store_cost.data.local.entity.SaleEntity
@@ -17,8 +18,8 @@ class SaleRepositoryImpl(
     private val saleDao: SaleDao
 ) : ISaleRepository {
 
-    override suspend fun registerSale(sale: Sale): Result<Unit> {
-        return try {
+    override suspend fun registerSale(sale: Sale): Result<Unit> =
+        resultOf("Error al registrar la venta") {
             saleDao.insertSale(
                 SaleEntity(
                     id = sale.id,
@@ -30,11 +31,8 @@ class SaleRepositoryImpl(
                     timestamp = sale.timestamp
                 )
             )
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error("Error al registrar la venta: ${e.message}")
+            Unit
         }
-    }
 
     override fun getSalesByDateRange(startTime: Long, endTime: Long): Flow<Result<List<Sale>>> =
         flow<Result<List<Sale>>> {

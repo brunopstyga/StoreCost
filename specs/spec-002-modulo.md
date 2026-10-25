@@ -396,3 +396,495 @@
   - [ ] Helper `EmailReportLauncher` configurado con `FileProvider` e `Intent.ACTION_SEND`.
   - [ ] Pruebas unitarias `GenerateMonthlyReportUseCaseTest` aprobadas en verde (`commonTest`).
   - *Archivos Creados/Modificados*: (Detallar la lista de UseCases, ViewModels, UiStates, Workers, Helpers e interfaces UI desarrolladas).
+  
+  # Spec 003: Tarea 04 - Login Básico por Contraseña y Refactorización de Clases Base
+
+## 1. Stack Tecnológico, Librerías, UI y Reglas de Arquitectura
+- **Framework & Multiplatform**: Kotlin Multiplatform (KMP) + Compose Multiplatform.
+- **Arquitectura & Escalabilidad**:
+  - Clean Architecture modularizada (Presentation, Domain, Data) con principios SOLID.
+  - Inyección de dependencias con Koin.
+  - Persistencia de sesión y credenciales mediante abstracción de clave-valor / Settings local.
+- **Testing**: Test-Driven Development (TDD) sobre `commonTest` utilizando `kotlin.test`.
+- **UI & Componentes Visuales (Compose Multiplatform)**:
+  - Diseño basado en Material 3 (`org.jetbrains.compose.material3`).
+  - Campo de contraseña enmascarado (`PasswordVisualTransformation`).
+  - Navegación condicional basada en estado reactivo de sesión.
+
+---
+
+## 2. Definición de Tareas de Implementación
+
+### **Tarea 04.A: Enfoque TDD - Fase Roja (Pruebas Unitarias de Autenticación, Casos de Uso y LoginViewModel)**
+- **Objetivo**: Escribir las pruebas unitarias en `commonTest` para la lógica de autenticación, validando el comportamiento de la verificación de contraseña y la sesión persistida antes de escribir el código de producción.
+
+- **Pasos a ejecutar**:
+  1. **Creación de Fake Repository para Autenticación (`commonTest/.../data/repository/`)**:
+     - Crear `FakeAuthRepository` implementando `IAuthRepository` con simulación en memoria de la contraseña válida y el estado de sesión actual.
+  2. **Creación de Pruebas Unitarias para Casos de Uso (`commonTest/.../domain/usecase/`)**:
+     - `LoginWithPasswordUseCaseTest.kt`: Validar retorno exitoso con contraseña correcta, fallo con contraseña incorrecta y validación de campo vacío.
+     - `CheckAuthStatusUseCaseTest.kt`: Validar la emisión reactiva del flujo `Flow<Boolean>` indicando si existe una sesión activa.
+     - `LogoutUseCaseTest.kt`: Validar la limpieza de la sesión en el repositorio.
+  3. **Creación de Pruebas Unitarias para ViewModel (`commonTest/.../presentation/viewmodel/`)**:
+     - `LoginViewModelTest.kt`: Validar la actualización de `LoginUiState` en respuesta a los eventos del usuario (ingreso de contraseña, click en Ingresar, error de autenticación y transición a éxito).
+- **Criterio de Aceptación**: Pruebas unitarias creadas y ejecutadas con fallo inicial esperado (Fase Roja) en `commonTest`.
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] `FakeAuthRepository` implementado para testing.
+  - [ ] Tests unitarios de Casos de Uso (`LoginWithPasswordUseCaseTest`, `CheckAuthStatusUseCaseTest`, `LogoutUseCaseTest`) escritos.
+  - [ ] Test unitario del ViewModel (`LoginViewModelTest`) escrito.
+  - [ ] Fallo verificado en la ejecución de pruebas (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de Fakes y archivos de tests unitarios creados).
+
+---
+
+### **Tarea 04.B: Implementación de la Capa de Dominio, Datos, Persistencia de Sesión y ViewModel**
+
+- **Objetivo**: Implementar la lógica de negocio, persistencia de contraseña/sesión local y el `LoginViewModel` encargado de gestionar los estados de la pantalla de Login.
+
+- **Pasos a ejecutar**:
+  1. **Capa de Dominio (`domain/`)**:
+     - Crear el modelo de dominio `UserSession` en `domain/model/`.
+     - Crear el contrato de interfaz `IAuthRepository` en `domain/repository/` declarando:
+       - `suspend fun login(password: String): Result<Boolean>`
+       - `fun observeIsLoggedIn(): Flow<Boolean>`
+       - `suspend fun logout(): Result<Unit>`
+     - Crear los Casos de Uso en `domain/usecase/`:
+       - `LoginWithPasswordUseCase`
+       - `CheckAuthStatusUseCase`
+       - `LogoutUseCase`
+  2. **Capa de Datos y Persistencia (`data/`)**:
+     - Crear la fuente de datos local `AuthLocalDataSource` (utilizando `KVStorage`, `Settings` o Room KMP para guardar el flag de sesión iniciada y el hash de la contraseña).
+     - Crear `AuthRepositoryImpl` en `data/repository/` implementando `IAuthRepository`.
+  3. **Capa de Presentación y Estado (`presentation/`)**:
+     - Crear `LoginUiState` en `presentation/state/`:
+       - Propiedades: `password: String = ""`, `isLoading: Boolean = false`, `errorMessage: String? = null`, `isAuthenticated: Boolean = false`, `isPasswordVisible: Boolean = false`.
+     - Crear `LoginViewModel` en `presentation/viewmodel/` anotado con `@KoinViewModel`:
+       - Expone `StateFlow<LoginUiState>` mediante `stateIn`.
+       - Métodos: `onPasswordChanged(newPassword: String)`, `onTogglePasswordVisibility()`, `onLoginClicked()`, `onLogoutClicked()`.
+  4. **Inyección de Dependencias (`di/AppModule.kt`)**:
+     - Registrar `AuthLocalDataSource`, `IAuthRepository` (`AuthRepositoryImpl`), Casos de Uso y `LoginViewModel` en el módulo de Koin.
+
+- **Criterio de Aceptación**:
+  - `LoginViewModel` y Casos de Uso compilando y pasando los tests creados en la Tarea 04.A en verde.
+  - Inyección de dependencias configurada correctamente en Koin.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Contrato `IAuthRepository` e implementación `AuthRepositoryImpl` creados.
+  - [ ] Casos de Uso de autenticación implementados en la capa de dominio.
+  - [ ] `LoginUiState` y `LoginViewModel` implementados.
+  - [ ] Módulo Koin actualizado con los nuevos componentes de Auth.
+  - [ ] Tests en verde (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de archivos de Dominio, Datos, Presentación y DI).
+
+---
+
+# Spec 003: Tarea 04 - Login Básico por Contraseña y Refactorización de Clases Base
+
+## 1. Stack Tecnológico, Librerías, UI y Reglas de Arquitectura
+- **Framework & Multiplatform**: Kotlin Multiplatform (KMP) + Compose Multiplatform.
+- **Arquitectura & Escalabilidad**:
+  - Clean Architecture modularizada (Presentation, Domain, Data) con principios SOLID.
+  - Inyección de dependencias con Koin.
+  - Persistencia segura de credenciales (contraseña protegida mediante hashing o almacenamiento cifrado) gestionada en la capa de datos.
+- **Testing**: Test-Driven Development (TDD) sobre `commonTest` utilizando `kotlin.test`.
+- **UI & Componentes Visuales (Compose Multiplatform)**:
+  - Diseño basado en Material 3 (`org.jetbrains.compose.material3`).
+  - Campo de contraseña enmascarado (`PasswordVisualTransformation`).
+  - Navegación condicional basada en estado reactivo de sesión.
+
+---
+
+## 2. Definición de Tareas de Implementación
+
+### **Tarea 04.A: Enfoque TDD - Fase Roja (Pruebas Unitarias de Autenticación, Casos de Uso y LoginViewModel)**
+- **Objetivo**: Escribir las pruebas unitarias en `commonTest` para la lógica de autenticación, validando el comportamiento de la verificación de contraseña y la sesión persistida antes de escribir el código de producción.
+
+- **Pasos a ejecutar**:
+  1. **Creación de Fake Repository para Autenticación (`commonTest/.../data/repository/`)**:
+     - Crear `FakeAuthRepository` implementando `IAuthRepository` con simulación en memoria de la contraseña válida y el estado de sesión actual.
+  2. **Creación de Pruebas Unitarias para Casos de Uso (`commonTest/.../domain/usecase/`)**:
+     - `LoginWithPasswordUseCaseTest.kt`: Validar retorno exitoso con contraseña correcta, fallo con contraseña incorrecta y validación de campo vacío.
+     - `CheckAuthStatusUseCaseTest.kt`: Validar la emisión reactiva del flujo `Flow<Boolean>` indicando si existe una sesión activa.
+     - `LogoutUseCaseTest.kt`: Validar la limpieza de la sesión en el repositorio.
+  3. **Creación de Pruebas Unitarias para ViewModel (`commonTest/.../presentation/viewmodel/`)**:
+     - `LoginViewModelTest.kt`: Validar la actualización de `LoginUiState` en respuesta a los eventos del usuario (ingreso de contraseña, click en Ingresar, error de autenticación y transición a éxito).
+- **Criterio de Aceptación**: Pruebas unitarias creadas y ejecutadas con fallo inicial esperado (Fase Roja) en `commonTest`.
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] `FakeAuthRepository` implementado para testing.
+  - [ ] Tests unitarios de Casos de Uso (`LoginWithPasswordUseCaseTest`, `CheckAuthStatusUseCaseTest`, `LogoutUseCaseTest`) escritos.
+  - [ ] Test unitario del ViewModel (`LoginViewModelTest`) escrito.
+  - [ ] Fallo verificado en la ejecución de pruebas (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de Fakes y archivos de tests unitarios creados).
+
+---
+
+### **Tarea 04.B: Implementación de la Capa de Dominio, Datos, Persistencia Cifrada y ViewModel**
+
+- **Objetivo**: Implementar la lógica de negocio, la persistencia local de la sesión y el almacenamiento cifrado/hasheado de la contraseña para proteger las credenciales del sistema, declarando las dependencias necesarias en `libs.versions.toml`.
+
+- **Pasos a ejecutar**:
+  1. **Declaración de Dependencias (si aplica)**:
+     - Registrar cualquier librería adicional requerida para almacenamiento seguro o cifrado en `gradle/libs.versions.toml` y sincronizar en los archivos `build.gradle.kts` correspondientes.
+  2. **Capa de Dominio (`domain/`)**:
+     - Crear el modelo de dominio `UserSession` en `domain/model/`.
+     - Crear el contrato de interfaz `IAuthRepository` en `domain/repository/` declarando:
+       - `suspend fun login(password: String): Result<Boolean>`
+       - `fun observeIsLoggedIn(): Flow<Boolean>`
+       - `suspend fun logout(): Result<Unit>`
+       - `suspend fun saveInitialPassword(password: String): Result<Unit>`
+     - Crear los Casos de Uso en `domain/usecase/`:
+       - `LoginWithPasswordUseCase`
+       - `CheckAuthStatusUseCase`
+       - `LogoutUseCase`
+       - `SavePasswordUseCase`
+  3. **Capa de Datos y Cifrado (`data/`)**:
+     - Crear la fuente de datos local `AuthLocalDataSource` integrando un mecanismo de almacenamiento cifrado o hashing seguro (ej. SHA-256 o cifrado nativo) para que la contraseña nunca se guarde en texto plano.
+     - Crear `AuthRepositoryImpl` en `data/repository/` implementando `IAuthRepository`.
+  4. **Capa de Presentación y Estado (`presentation/`)**:
+     - Crear `LoginUiState` en `presentation/state/`:
+       - Propiedades: `password: String = ""`, `isLoading: Boolean = false`, `errorMessage: String? = null`, `isAuthenticated: Boolean = false`, `isPasswordVisible: Boolean = false`.
+     - Crear `LoginViewModel` en `presentation/viewmodel/` anotado con `@KoinViewModel`:
+       - Expone `StateFlow<LoginUiState>` mediante `stateIn`.
+       - Métodos: `onPasswordChanged(newPassword: String)`, `onTogglePasswordVisibility()`, `onLoginClicked()`, `onLogoutClicked()`.
+  5. **Inyección de Dependencias (`di/AppModule.kt`)**:
+     - Registrar `AuthLocalDataSource`, `IAuthRepository` (`AuthRepositoryImpl`), Casos de Uso y `LoginViewModel` en el módulo de Koin.
+
+- **Criterio de Aceptación**:
+  - Librerías necesarias declaradas en `libs.versions.toml`.
+  - Contraseña protegida mediante hashing o cifrado local.
+  - `LoginViewModel` y Casos de Uso compilando y pasando las pruebas unitarias en verde.
+  - Inyección de dependencias configurada correctamente en Koin.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Dependencias registradas en `libs.versions.toml`.
+  - [ ] Contrato `IAuthRepository` e implementación `AuthRepositoryImpl` creados.
+  - [ ] Casos de Uso de autenticación implementados en la capa de dominio.
+  - [ ] `LoginUiState` y `LoginViewModel` implementados.
+  - [ ] Módulo Koin actualizado con los nuevos componentes de Auth.
+  - [ ] Tests en verde (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de archivos de Dominio, Datos, Presentación y DI).
+
+---
+
+# Spec 003: Tarea 04 - Login Básico por Contraseña y Refactorización de Clases Base
+
+## 1. Stack Tecnológico, Librerías, UI y Reglas de Arquitectura
+- **Framework & Multiplatform**: Kotlin Multiplatform (KMP) + Compose Multiplatform.
+- **Arquitectura & Escalabilidad**:
+  - Clean Architecture modularizada (Presentation, Domain, Data) con principios SOLID.
+  - Inyección de dependencias con Koin.
+  - Persistencia segura de credenciales (contraseña protegida mediante hashing o almacenamiento cifrado) gestionada en la capa de datos.
+- **Testing**: Test-Driven Development (TDD) sobre `commonTest` utilizando `kotlin.test`.
+- **UI & Componentes Visuales (Compose Multiplatform)**:
+  - Diseño basado en Material 3 (`org.jetbrains.compose.material3`).
+  - Campo de contraseña enmascarado (`PasswordVisualTransformation`).
+  - Navegación condicional basada en estado reactivo de sesión.
+
+---
+
+## 2. Definición de Tareas de Implementación
+
+### **Tarea 04.A: Enfoque TDD - Fase Roja (Pruebas Unitarias de Autenticación, Casos de Uso y LoginViewModel)**
+- **Objetivo**: Escribir las pruebas unitarias en `commonTest` para la lógica de autenticación, validando el comportamiento de la verificación de contraseña y la sesión persistida antes de escribir el código de producción.
+
+- **Pasos a ejecutar**:
+  1. **Creación de Fake Repository para Autenticación (`commonTest/.../data/repository/`)**:
+     - Crear `FakeAuthRepository` implementando `IAuthRepository` con simulación en memoria de la contraseña válida y el estado de sesión actual.
+  2. **Creación de Pruebas Unitarias para Casos de Uso (`commonTest/.../domain/usecase/`)**:
+     - `LoginWithPasswordUseCaseTest.kt`: Validar retorno exitoso con contraseña correcta, fallo con contraseña incorrecta y validación de campo vacío.
+     - `CheckAuthStatusUseCaseTest.kt`: Validar la emisión reactiva del flujo `Flow<Boolean>` indicando si existe una sesión activa.
+     - `LogoutUseCaseTest.kt`: Validar la limpieza de la sesión en el repositorio.
+  3. **Creación de Pruebas Unitarias para ViewModel (`commonTest/.../presentation/viewmodel/`)**:
+     - `LoginViewModelTest.kt`: Validar la actualización de `LoginUiState` en respuesta a los eventos del usuario (ingreso de contraseña, click en Ingresar, error de autenticación y transición a éxito).
+- **Criterio de Aceptación**: Pruebas unitarias creadas y ejecutadas con fallo inicial esperado (Fase Roja) en `commonTest`.
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] `FakeAuthRepository` implementado para testing.
+  - [ ] Tests unitarios de Casos de Uso (`LoginWithPasswordUseCaseTest`, `CheckAuthStatusUseCaseTest`, `LogoutUseCaseTest`) escritos.
+  - [ ] Test unitario del ViewModel (`LoginViewModelTest`) escrito.
+  - [ ] Fallo verificado en la ejecución de pruebas (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de Fakes y archivos de tests unitarios creados).
+
+---
+
+### **Tarea 04.B: Implementación de la Capa de Dominio, Datos, Persistencia Cifrada y ViewModel**
+
+- **Objetivo**: Implementar la lógica de negocio, la persistencia local de la sesión y el almacenamiento cifrado/hasheado de la contraseña para proteger las credenciales del sistema, declarando las dependencias necesarias en `libs.versions.toml`.
+
+- **Pasos a ejecutar**:
+  1. **Declaración de Dependencias (si aplica)**:
+     - Registrar cualquier librería adicional requerida para almacenamiento seguro o cifrado en `gradle/libs.versions.toml` y sincronizar en los archivos `build.gradle.kts` correspondientes.
+  2. **Capa de Dominio (`domain/`)**:
+     - Crear el modelo de dominio `UserSession` en `domain/model/`.
+     - Crear el contrato de interfaz `IAuthRepository` en `domain/repository/` declarando:
+       - `suspend fun login(password: String): Result<Boolean>`
+       - `fun observeIsLoggedIn(): Flow<Boolean>`
+       - `suspend fun logout(): Result<Unit>`
+       - `suspend fun saveInitialPassword(password: String): Result<Unit>`
+     - Crear los Casos de Uso en `domain/usecase/`:
+       - `LoginWithPasswordUseCase`
+       - `CheckAuthStatusUseCase`
+       - `LogoutUseCase`
+       - `SavePasswordUseCase`
+  3. **Capa de Datos y Cifrado (`data/`)**:
+     - Crear la fuente de datos local `AuthLocalDataSource` integrando un mecanismo de almacenamiento cifrado o hashing seguro (ej. SHA-256 o cifrado nativo) para que la contraseña nunca se guarde en texto plano.
+     - Crear `AuthRepositoryImpl` en `data/repository/` implementando `IAuthRepository`.
+  4. **Capa de Presentación y Estado (`presentation/`)**:
+     - Crear `LoginUiState` en `presentation/state/`:
+       - Propiedades: `password: String = ""`, `isLoading: Boolean = false`, `errorMessage: String? = null`, `isAuthenticated: Boolean = false`, `isPasswordVisible: Boolean = false`.
+     - Crear `LoginViewModel` en `presentation/viewmodel/` anotado con `@KoinViewModel`:
+       - Expone `StateFlow<LoginUiState>` mediante `stateIn`.
+       - Métodos: `onPasswordChanged(newPassword: String)`, `onTogglePasswordVisibility()`, `onLoginClicked()`, `onLogoutClicked()`.
+  5. **Inyección de Dependencias (`di/AppModule.kt`)**:
+     - Registrar `AuthLocalDataSource`, `IAuthRepository` (`AuthRepositoryImpl`), Casos de Uso y `LoginViewModel` en el módulo de Koin.
+
+- **Criterio de Aceptación**:
+  - Librerías necesarias declaradas en `libs.versions.toml`.
+  - Contraseña protegida mediante hashing o cifrado local.
+  - `LoginViewModel` y Casos de Uso compilando y pasando las pruebas unitarias en verde.
+  - Inyección de dependencias configurada correctamente en Koin.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Dependencias registradas en `libs.versions.toml`.
+  - [ ] Contrato `IAuthRepository` e implementación `AuthRepositoryImpl` creados.
+  - [ ] Casos de Uso de autenticación implementados en la capa de dominio.
+  - [ ] `LoginUiState` y `LoginViewModel` implementados.
+  - [ ] Módulo Koin actualizado con los nuevos componentes de Auth.
+  - [ ] Tests en verde (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de archivos de Dominio, Datos, Presentación y DI).
+
+---
+
+Tarea 04 - Login Básico por Contraseña y Refactorización de Clases Base
+
+## 1. Stack Tecnológico, Librerías, UI y Reglas de Arquitectura
+- **Framework & Multiplatform**: Kotlin Multiplatform (KMP) + Compose Multiplatform.
+- **Arquitectura & Escalabilidad**:
+  - Clean Architecture modularizada (Presentation, Domain, Data) con principios SOLID.
+  - Inyección de dependencias con Koin.
+  - Persistencia segura de credenciales (contraseña protegida mediante hashing o almacenamiento cifrado) gestionada en la capa de datos.
+- **Testing**: Test-Driven Development (TDD) sobre `commonTest` utilizando `kotlin.test`.
+- **UI & Componentes Visuales (Compose Multiplatform)**:
+  - Diseño basado en Material 3 (`org.jetbrains.compose.material3`).
+  - Campo de contraseña enmascarado (`PasswordVisualTransformation`).
+  - Navegación condicional basada en estado reactivo de sesión.
+
+---
+
+## 2. Definición de Tareas de Implementación
+
+### **Tarea 04.A: Enfoque TDD - Fase Roja (Pruebas Unitarias de Autenticación, Casos de Uso y LoginViewModel)**
+- **Objetivo**: Escribir las pruebas unitarias en `commonTest` para la lógica de autenticación, validando el comportamiento de la verificación de contraseña y la sesión persistida antes de escribir el código de producción.
+
+- **Pasos a ejecutar**:
+  1. **Creación de Fake Repository para Autenticación (`commonTest/.../data/repository/`)**:
+     - Crear `FakeAuthRepository` implementando `IAuthRepository` con simulación en memoria de la contraseña válida y el estado de sesión actual.
+  2. **Creación de Pruebas Unitarias para Casos de Uso (`commonTest/.../domain/usecase/`)**:
+     - `LoginWithPasswordUseCaseTest.kt`: Validar retorno exitoso con contraseña correcta, fallo con contraseña incorrecta y validación de campo vacío.
+     - `CheckAuthStatusUseCaseTest.kt`: Validar la emisión reactiva del flujo `Flow<Boolean>` indicando si existe una sesión activa.
+     - `LogoutUseCaseTest.kt`: Validar la limpieza de la sesión en el repositorio.
+  3. **Creación de Pruebas Unitarias para ViewModel (`commonTest/.../presentation/viewmodel/`)**:
+     - `LoginViewModelTest.kt`: Validar la actualización de `LoginUiState` en respuesta a los eventos del usuario (ingreso de contraseña, click en Ingresar, error de autenticación y transición a éxito).
+- **Criterio de Aceptación**: Pruebas unitarias creadas y ejecutadas con fallo inicial esperado (Fase Roja) en `commonTest`.
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] `FakeAuthRepository` implementado para testing.
+  - [ ] Tests unitarios de Casos de Uso (`LoginWithPasswordUseCaseTest`, `CheckAuthStatusUseCaseTest`, `LogoutUseCaseTest`) escritos.
+  - [ ] Test unitario del ViewModel (`LoginViewModelTest`) escrito.
+  - [ ] Fallo verificado en la ejecución de pruebas (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de Fakes y archivos de tests unitarios creados).
+
+---
+
+### **Tarea 04.B: Implementación de la Capa de Dominio, Datos, Persistencia Cifrada y ViewModel**
+
+- **Objetivo**: Implementar la lógica de negocio, la persistencia local de la sesión y el almacenamiento cifrado/hasheado de la contraseña para proteger las credenciales del sistema, declarando las dependencias necesarias en `libs.versions.toml`.
+
+- **Pasos a ejecutar**:
+  1. **Declaración de Dependencias (si aplica)**:
+     - Registrar cualquier librería adicional requerida para almacenamiento seguro o cifrado en `gradle/libs.versions.toml` y sincronizar en los archivos `build.gradle.kts` correspondientes.
+  2. **Capa de Dominio (`domain/`)**:
+     - Crear el modelo de dominio `UserSession` en `domain/model/`.
+     - Crear el contrato de interfaz `IAuthRepository` en `domain/repository/` declarando:
+       - `suspend fun login(password: String): Result<Boolean>`
+       - `fun observeIsLoggedIn(): Flow<Boolean>`
+       - `suspend fun logout(): Result<Unit>`
+       - `suspend fun saveInitialPassword(password: String): Result<Unit>`
+     - Crear los Casos de Uso en `domain/usecase/`:
+       - `LoginWithPasswordUseCase`
+       - `CheckAuthStatusUseCase`
+       - `LogoutUseCase`
+       - `SavePasswordUseCase`
+  3. **Capa de Datos y Cifrado (`data/`)**:
+     - Crear la fuente de datos local `AuthLocalDataSource` integrando un mecanismo de almacenamiento cifrado o hashing seguro (ej. SHA-256 o cifrado nativo) para que la contraseña nunca se guarde en texto plano.
+     - Crear `AuthRepositoryImpl` en `data/repository/` implementando `IAuthRepository`.
+  4. **Capa de Presentación y Estado (`presentation/`)**:
+     - Crear `LoginUiState` en `presentation/state/`:
+       - Propiedades: `password: String = ""`, `isLoading: Boolean = false`, `errorMessage: String? = null`, `isAuthenticated: Boolean = false`, `isPasswordVisible: Boolean = false`.
+     - Crear `LoginViewModel` en `presentation/viewmodel/` anotado con `@KoinViewModel`:
+       - Expone `StateFlow<LoginUiState>` mediante `stateIn`.
+       - Métodos: `onPasswordChanged(newPassword: String)`, `onTogglePasswordVisibility()`, `onLoginClicked()`, `onLogoutClicked()`.
+  5. **Inyección de Dependencias (`di/AppModule.kt`)**:
+     - Registrar `AuthLocalDataSource`, `IAuthRepository` (`AuthRepositoryImpl`), Casos de Uso y `LoginViewModel` en el módulo de Koin.
+
+- **Criterio de Aceptación**:
+  - Librerías necesarias declaradas en `libs.versions.toml`.
+  - Contraseña protegida mediante hashing o cifrado local.
+  - `LoginViewModel` y Casos de Uso compilando y pasando las pruebas unitarias en verde.
+  - Inyección de dependencias configurada correctamente en Koin.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Dependencias registradas en `libs.versions.toml`.
+  - [ ] Contrato `IAuthRepository` e implementación `AuthRepositoryImpl` creados.
+  - [ ] Casos de Uso de autenticación implementados en la capa de dominio.
+  - [ ] `LoginUiState` y `LoginViewModel` implementados.
+  - [ ] Módulo Koin actualizado con los nuevos componentes de Auth.
+  - [ ] Tests en verde (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de archivos de Dominio, Datos, Presentación y DI).
+
+---
+
+Tarea 05 - Login Básico por Contraseña y Refactorización de Clases Base
+
+## 1. Stack Tecnológico, Librerías, UI y Reglas de Arquitectura
+- **Framework & Multiplatform**: Kotlin Multiplatform (KMP) + Compose Multiplatform.
+- **Arquitectura & Escalabilidad**:
+  - Clean Architecture modularizada (Presentation, Domain, Data) con principios SOLID.
+  - Inyección de dependencias con Koin.
+  - Persistencia segura de credenciales (contraseña protegida mediante hashing o almacenamiento cifrado) gestionada en la capa de datos.
+- **Testing**: Test-Driven Development (TDD) sobre `commonTest` utilizando `kotlin.test`.
+- **UI & Componentes Visuales (Compose Multiplatform)**:
+  - Diseño basado en Material 3 (`org.jetbrains.compose.material3`).
+  - Campo de contraseña enmascarado (`PasswordVisualTransformation`).
+  - Navegación condicional basada en estado reactivo de sesión.
+
+---
+
+## 2. Definición de Tareas de Implementación
+
+### **Tarea 05.A: Enfoque TDD - Fase Roja (Pruebas Unitarias de Autenticación, Casos de Uso y LoginViewModel)**
+- **Objetivo**: Escribir las pruebas unitarias en `commonTest` para la lógica de autenticación, validando el comportamiento de la verificación de contraseña y la sesión persistida antes de escribir el código de producción.
+
+- **Pasos a ejecutar**:
+  1. **Creación de Fake Repository para Autenticación (`commonTest/.../data/repository/`)**:
+     - Crear `FakeAuthRepository` implementando `IAuthRepository` con simulación en memoria de la contraseña válida y el estado de sesión actual.
+  2. **Creación de Pruebas Unitarias para Casos de Uso (`commonTest/.../domain/usecase/`)**:
+     - `LoginWithPasswordUseCaseTest.kt`: Validar retorno exitoso con contraseña correcta, fallo con contraseña incorrecta y validación de campo vacío.
+     - `CheckAuthStatusUseCaseTest.kt`: Validar la emisión reactiva del flujo `Flow<Boolean>` indicando si existe una sesión activa.
+     - `LogoutUseCaseTest.kt`: Validar la limpieza de la sesión en el repositorio.
+  3. **Creación de Pruebas Unitarias para ViewModel (`commonTest/.../presentation/viewmodel/`)**:
+     - `LoginViewModelTest.kt`: Validar la actualización de `LoginUiState` en respuesta a los eventos del usuario (ingreso de contraseña, click en Ingresar, error de autenticación y transición a éxito).
+- **Criterio de Aceptación**: Pruebas unitarias creadas y ejecutadas con fallo inicial esperado (Fase Roja) en `commonTest`.
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] `FakeAuthRepository` implementado para testing.
+  - [ ] Tests unitarios de Casos de Uso (`LoginWithPasswordUseCaseTest`, `CheckAuthStatusUseCaseTest`, `LogoutUseCaseTest`) escritos.
+  - [ ] Test unitario del ViewModel (`LoginViewModelTest`) escrito.
+  - [ ] Fallo verificado en la ejecución de pruebas (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de Fakes y archivos de tests unitarios creados).
+  
+  ### **Tarea 05.B: Implementación de la Capa de Dominio, Datos, Persistencia Cifrada y ViewModel**
+
+- **Objetivo**: Implementar la lógica de negocio, la persistencia local de la sesión y el almacenamiento cifrado/hasheado de la contraseña para proteger las credenciales del sistema, declarando las dependencias necesarias en `libs.versions.toml`.
+
+- **Pasos a ejecutar**:
+  1. **Declaración de Dependencias (si aplica)**:
+     - Registrar cualquier librería adicional requerida para almacenamiento seguro o cifrado en `gradle/libs.versions.toml` y sincronizar en los archivos `build.gradle.kts` correspondientes.
+  2. **Capa de Dominio (`domain/`)**:
+     - Crear el modelo de dominio `UserSession` en `domain/model/`.
+     - Crear el contrato de interfaz `IAuthRepository` en `domain/repository/` declarando:
+       - `suspend fun login(password: String): Result<Boolean>`
+       - `fun observeIsLoggedIn(): Flow<Boolean>`
+       - `suspend fun logout(): Result<Unit>`
+       - `suspend fun saveInitialPassword(password: String): Result<Unit>`
+     - Crear los Casos de Uso en `domain/usecase/`:
+       - `LoginWithPasswordUseCase`
+       - `CheckAuthStatusUseCase`
+       - `LogoutUseCase`
+       - `SavePasswordUseCase`
+  3. **Capa de Datos y Cifrado (`data/`)**:
+     - Crear la fuente de datos local `AuthLocalDataSource` integrando un mecanismo de almacenamiento cifrado o hashing seguro (ej. SHA-256 o cifrado nativo) para que la contraseña nunca se guarde en texto plano.
+     - Crear `AuthRepositoryImpl` en `data/repository/` implementando `IAuthRepository`.
+  4. **Capa de Presentación y Estado (`presentation/`)**:
+     - Crear `LoginUiState` en `presentation/state/`:
+       - Propiedades: `password: String = ""`, `isLoading: Boolean = false`, `errorMessage: String? = null`, `isAuthenticated: Boolean = false`, `isPasswordVisible: Boolean = false`.
+     - Crear `LoginViewModel` en `presentation/viewmodel/` anotado con `@KoinViewModel`:
+       - Expone `StateFlow<LoginUiState>` mediante `stateIn`.
+       - Métodos: `onPasswordChanged(newPassword: String)`, `onTogglePasswordVisibility()`, `onLoginClicked()`, `onLogoutClicked()`.
+  5. **Inyección de Dependencias (`di/AppModule.kt`)**:
+     - Registrar `AuthLocalDataSource`, `IAuthRepository` (`AuthRepositoryImpl`), Casos de Uso y `LoginViewModel` en el módulo de Koin.
+
+- **Criterio de Aceptación**:
+  - Librerías necesarias declaradas en `libs.versions.toml`.
+  - Contraseña protegida mediante hashing o cifrado local.
+  - `LoginViewModel` y Casos de Uso compilando y pasando las pruebas unitarias en verde.
+  - Inyección de dependencias configurada correctamente en Koin.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Dependencias registradas en `libs.versions.toml`.
+  - [ ] Contrato `IAuthRepository` e implementación `AuthRepositoryImpl` creados.
+  - [ ] Casos de Uso de autenticación implementados en la capa de dominio.
+  - [ ] `LoginUiState` y `LoginViewModel` implementados.
+  - [ ] Módulo Koin actualizado con los nuevos componentes de Auth.
+  - [ ] Tests en verde (`gradlew test`).
+  - *Archivos Creados/Modificados*: (Detallar lista de archivos de Dominio, Datos, Presentación y DI).
+
+### **Tarea 05.C: Refactorización de Clases Base de Navegación, Pantalla de Login e Integración**
+
+- **Objetivo**: Crear la interfaz visual de `LoginScreen`, refactorizar las clases base de la aplicación (`App`, `NavigationGraph` / `MainContainer`) para interceptar la sesión y controlar el flujo de navegación entre la pantalla de Login y las pantallas principales.
+
+- **Pasos a ejecutar**:
+  1. **Creación de la Pantalla Visual (`LoginScreen.kt`)**:
+     - Maquetar `LoginScreen` en `presentation/screen/`:
+       - Título principal y subtítulo (*"Store Cost - Acceso al Sistema"*).
+       - Campo de texto para contraseña (`OutlinedTextField` con `PasswordVisualTransformation` y botón para alternar visibilidad).
+       - Botón principal **"INGRESAR"** con indicador de carga (`CircularProgressIndicator`).
+       - Mensajes de error en `Text` con color `MaterialTheme.colorScheme.error`.
+  2. **Refactorización de Clases Base y Navegación (`App.kt`, `MainContent.kt`)**:
+     - Refactorizar el componente base `App` o la navegación raíz:
+       - Observar el estado reactivo de sesión (`CheckAuthStatusUseCase` / `LoginUiState.isAuthenticated`).
+       - Si no está autenticado: Renderizar exclusivamente `LoginScreen`.
+       - Si está autenticado: Renderizar el contenedor principal con el menú de navegación (Gestión de Precios, Ventas y Cierre).
+  3. **Integración de Cierre de Sesión**:
+     - Agregar la opción o botón de **"Cerrar Sesión"** en la barra superior (`TopAppBar`) o en el Drawer para permitir volver a la pantalla de Login limpiando la sesión.
+
+- **Criterio de Aceptación**:
+  - Al iniciar la app sin sesión activa, se presenta obligatoriamente la `LoginScreen`.
+  - Al ingresar la contraseña correcta, el sistema navega automáticamente a la pantalla principal.
+  - Las clases base de la app no rompen la navegación existente de Gestión de Precios ni de Ventas y Cierre.
+  - Compilación exitosa e integración probada.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Componente `LoginScreen` maquetado con Material 3 y desacoplado del estado.
+  - [ ] Clases base (`App.kt` / Navegación principal) refactorizadas para soporte de sesión.
+  - [ ] Flujo condicional de navegación autenticado/no autenticado validado.
+  - [ ] Opción de cierre de sesión agregada y conectada a `LogoutUseCase`.
+  - [ ] Pruebas de integración manual y tests unitarios en verde.
+  - *Archivos Creados/Modificados*: (Detallar la lista de pantallas, composables base, routers y archivos de configuración ajustados).
+  
+  # Tarea 06 - Auditoría de Fugas de Memoria, Gestión de Recursos y Componentes Reutilizables (Code Review Checklist)
+
+## Definición de Pasos de Auditoría y Verificación
+
+### 1. Auditoría de Fugas de Memoria (Memory Leaks) y Gestión de Recursos
+- **Objetivo**: Garantizar la liberación adecuada de recursos, corrutinas, contextos y listeners para evitar consumo excesivo de RAM o cierres inesperados (OOM).
+
+- **Pasos a ejecutar**:
+  - [ ] **Corrutinas y Scopes**:
+     - Verificar que ninguna corrutina utilice `GlobalScope`. Asegurar que todas las corrutinas se ejecuten dentro de `viewModelScope` o `coroutineScope` delimitados por ciclo de vida.
+  - [ ] **Consumo de Estados en UI (Compose)**:
+     - Validar que en Compose la recolección de `StateFlow` o `Flow` se realice mediante `collectAsStateWithLifecycle()` para pausar/cancelar la suscripción al destruir la vista.
+  - [ ] **Contextos y Referencias Estáticas**:
+     - Asegurar que ningún singleton, clase estática o repositorio conserve referencias directas a componentes con ciclo de vida corto (ej. `Context` de una Activity, `View` o callbacks visuales).
+  - [ ] **Listeners, Observers y Dispatchers**:
+     - Comprobar que los listeners, observadores o suscripciones abiertas (como llamadas a APIs de ubicación, sensores o conectores) se cancelen/desregistren correctamente mediante `DisposableEffect` en Compose o al destruirse el `ViewModel` (`onCleared`).
+
+### 2. Detección y Extracción de Componentes y Código Duplicado (DRY)
+- **Objetivo**: Identificar elementos repetidos en la interfaz de usuario y lógica de negocio para refactorizarlos en componentes reutilizables o funciones genéricas.
+
+- **Pasos a ejecutar**:
+  - [ ] **Componentes de UI Repetitivos (Ej. OutlinedTextField)**:
+     - Revisar si existen elementos visuales duplicados entre pantallas (por ejemplo, `OutlinedTextField` con estilos, validaciones o comportamientos similares en gestión de precios y ventas).
+     - Si es así, crear un componente reutilizable genérico y reemplazar las instancias duplicadas en las pantallas correspondientes.
+  - [ ] **Funciones y Métodos Duplicados**:
+     - Auditar clases, ViewModels y utilidades en búsqueda de lógica, validaciones o transformaciones de datos repetidas.
+     - Centralizar dichos métodos en funciones de extensión o utilidades compartidas para mantener el código limpio y evitar la duplicación (principio DRY).
+  
+  

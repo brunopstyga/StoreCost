@@ -4,8 +4,8 @@ import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
 import com.tickets.store_cost.domain.repository.ISaleRepository
+import com.tickets.store_cost.domain.util.roundToCents
 import kotlinx.datetime.Clock
-import kotlin.math.round
 import org.koin.core.annotation.Factory
 
 @Factory
@@ -28,7 +28,7 @@ class RegisterSaleUseCase(
         }
 
         val unitPrice = calculatePriceUseCase(basePrice, operationType)
-        val subtotal = round((unitPrice * quantity) * 100.0) / 100.0
+        val subtotal = (unitPrice * quantity).roundToCents()
 
         val sale = Sale(
             id = 0L,

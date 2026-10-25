@@ -8,9 +8,8 @@ import com.tickets.store_cost.domain.repository.IReportFileWriter
 import com.tickets.store_cost.domain.usecase.GenerateMonthlyReportUseCase
 import com.tickets.store_cost.presentation.state.ReportUiState
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 
@@ -25,11 +24,7 @@ class ReportViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ReportUiState>(ReportUiState.Idle)
-    val uiState: StateFlow<ReportUiState> = _uiState.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = ReportUiState.Idle
-    )
+    val uiState: StateFlow<ReportUiState> = _uiState.asStateFlow()
 
     fun onExportMonthlyReport(year: Int, month: Int) {
         if (_uiState.value is ReportUiState.Loading) return

@@ -18,7 +18,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,10 +32,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
+import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
+import com.tickets.store_cost.presentation.screen.components.ErrorMessage
+import com.tickets.store_cost.presentation.screen.components.SuccessMessage
 import com.tickets.store_cost.presentation.state.ConsultingUiState
 import com.tickets.store_cost.presentation.util.displayName
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatTimestamp
+import com.tickets.store_cost.presentation.util.operationTypeDisplayName
 import com.tickets.store_cost.presentation.viewmodel.ConsultingViewModel
 import com.tickets.store_cost.resources.Res
 import com.tickets.store_cost.resources.common_quantity_label
@@ -125,28 +128,16 @@ private fun GestionPreciosContent(
         }
 
         state.saveErrorMessage?.let { message ->
-            Text(
-                text = message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            ErrorMessage(message)
         }
 
         if (state.isSaved) {
-            Text(
-                text = stringResource(Res.string.prices_saved_success),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SuccessMessage(stringResource(Res.string.prices_saved_success))
         }
 
         if (state.saveState == null) {
             state.historyErrorMessage?.let { message ->
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                ErrorMessage(message)
             }
         }
 
@@ -215,11 +206,7 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = consultations.message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            ErrorMessage(consultations.message)
         }
 
         is Result.Success -> {
@@ -257,12 +244,6 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
 }
 
 @Composable
-private fun modalityDisplayName(raw: String): String {
-    val operationType = OperationType.entries.firstOrNull { it.name == raw }
-    return operationType?.displayName() ?: raw
-}
-
-@Composable
 private fun ConsultationRow(consultation: PriceConsultation) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -276,7 +257,7 @@ private fun ConsultationRow(consultation: PriceConsultation) {
             Text(
                 text = stringResource(
                     Res.string.prices_consultation_modality,
-                    modalityDisplayName(consultation.selectedModality)
+                    operationTypeDisplayName(consultation.selectedModality)
                 ),
                 style = MaterialTheme.typography.titleSmall
             )

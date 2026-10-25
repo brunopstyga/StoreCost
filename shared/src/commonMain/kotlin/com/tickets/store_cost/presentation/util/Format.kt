@@ -1,5 +1,7 @@
 package com.tickets.store_cost.presentation.util
 
+import com.tickets.store_cost.core.util.formatDate
+import com.tickets.store_cost.core.util.formatDateTime
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -22,15 +24,7 @@ fun formatCurrency(value: Double): String {
 /**
  * Formatea un epoch en milisegundos como "dd/MM/yyyy HH:mm".
  */
-fun formatTimestamp(timestamp: Long): String {
-    val dateTime = Instant.fromEpochMilliseconds(timestamp)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-    val day = dateTime.dayOfMonth.toString().padStart(2, '0')
-    val month = dateTime.monthNumber.toString().padStart(2, '0')
-    val hour = dateTime.hour.toString().padStart(2, '0')
-    val minute = dateTime.minute.toString().padStart(2, '0')
-    return "$day/$month/${dateTime.year} $hour:$minute"
-}
+fun formatTimestamp(timestamp: Long): String = formatDateTime(timestamp)
 
 /**
  * Formatea un rango [start, end] como "dd/MM/yyyy - dd/MM/yyyy".
@@ -52,12 +46,6 @@ fun formatMonthYear(timestamp: Long, monthName: String): String {
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
     return "$monthName ${date.year}"
-}
-
-private fun formatDate(date: kotlinx.datetime.LocalDate): String {
-    val day = date.dayOfMonth.toString().padStart(2, '0')
-    val month = date.monthNumber.toString().padStart(2, '0')
-    return "$day/$month/${date.year}"
 }
 
 private fun groupThousands(value: Long): String {
