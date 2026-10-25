@@ -5,20 +5,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.SalesSummary
 import com.tickets.store_cost.domain.model.getOrNull
 import com.tickets.store_cost.presentation.state.ReportUiState
+import com.tickets.store_cost.presentation.theme.AppStyles
+import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatMonthYear
 import com.tickets.store_cost.presentation.util.operationTypeDisplayName
@@ -58,11 +56,13 @@ fun MonthlySummarySection(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
     ) {
-        Text(
-            text = stringResource(Res.string.monthly_summary_title, formatMonthYear(startTime)),
-            style = MaterialTheme.typography.titleMedium
+        SectionTitle(
+            text = stringResource(
+                Res.string.monthly_summary_title,
+                formatMonthYear(startTime)
+            )
         )
 
         if (summary is Result.Loading) {
@@ -70,45 +70,38 @@ fun MonthlySummarySection(
         }
 
         (summary as? Result.Error)?.let { error ->
-            ErrorMessage(error.message)
+            ErrorMessage(error.displayMessage())
         }
 
         if (summary is Result.Success) {
             if (salesCount == 0) {
                 Text(
                     text = stringResource(Res.string.monthly_empty),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AppStyles.Typography.body
                 )
             } else {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                AppCard {
+                    Text(
+                        text = stringResource(Res.string.monthly_total_sold),
+                        style = AppStyles.Typography.caption,
+                        color = AppStyles.Colors.secondaryText
+                    )
+                    Text(
+                        text = formatCurrency(totalBilled),
+                        style = AppStyles.Typography.metric
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = stringResource(Res.string.monthly_total_sold),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        SummaryValue(
+                            label = stringResource(Res.string.common_operations),
+                            value = salesCount.toString()
                         )
-                        Text(
-                            text = formatCurrency(totalBilled),
-                            style = MaterialTheme.typography.headlineMedium
+                        SummaryValue(
+                            label = stringResource(Res.string.monthly_average_ticket),
+                            value = formatCurrency(totalBilled / salesCount)
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            SummaryValue(
-                                label = stringResource(Res.string.common_operations),
-                                value = salesCount.toString()
-                            )
-                            SummaryValue(
-                                label = stringResource(Res.string.monthly_average_ticket),
-                                value = formatCurrency(totalBilled / salesCount)
-                            )
-                        }
                     }
                 }
             }
@@ -139,22 +132,22 @@ fun MonthlySummarySection(
         }
 
         (reportState as? ReportUiState.Error)?.let { error ->
-            ErrorMessage(error.message)
+            ErrorMessage(error.code.displayMessage())
         }
     }
 }
 
 @Composable
 private fun SummaryValue(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.hairline)) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = AppStyles.Typography.caption,
+            color = AppStyles.Colors.secondaryText
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium
+            style = AppStyles.Typography.sectionTitle
         )
     }
 }

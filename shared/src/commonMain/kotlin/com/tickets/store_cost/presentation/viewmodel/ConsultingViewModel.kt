@@ -2,6 +2,7 @@ package com.tickets.store_cost.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
@@ -80,7 +81,7 @@ class ConsultingViewModel(
         if (basePrice == null || basePrice <= 0.0 || quantity == null || quantity <= 0) {
             formState.update {
                 it.copy(
-                    saveState = Result.Error("El precio base y la cantidad deben ser mayores a cero.")
+                    saveState = Result.Error(ErrorCode.INVALID_BASE_PRICE_AND_QUANTITY)
                 )
             }
             return

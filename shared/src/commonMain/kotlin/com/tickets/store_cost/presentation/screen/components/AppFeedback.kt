@@ -2,10 +2,10 @@ package com.tickets.store_cost.presentation.screen.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.tickets.store_cost.presentation.theme.AppStyles
 
 /**
  * Mensaje de error homogéneo para todas las pantallas.
@@ -17,8 +17,8 @@ fun ErrorMessage(
 ) {
     Text(
         text = message,
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodyMedium,
+        color = AppStyles.Colors.error,
+        style = AppStyles.Typography.body,
         modifier = modifier
     )
 }
@@ -33,8 +33,8 @@ fun SuccessMessage(
 ) {
     Text(
         text = message,
-        color = MaterialTheme.colorScheme.primary,
-        style = MaterialTheme.typography.bodyMedium,
+        color = AppStyles.Colors.success,
+        style = AppStyles.Typography.body,
         modifier = modifier
     )
 }

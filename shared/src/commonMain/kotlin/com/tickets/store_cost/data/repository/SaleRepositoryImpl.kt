@@ -1,5 +1,6 @@
 package com.tickets.store_cost.data.repository
 
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
@@ -19,7 +20,7 @@ class SaleRepositoryImpl(
 ) : ISaleRepository {
 
     override suspend fun registerSale(sale: Sale): Result<Unit> =
-        resultOf("Error al registrar la venta") {
+        resultOf(ErrorCode.REGISTER_SALE_FAILED) {
             saleDao.insertSale(
                 SaleEntity(
                     id = sale.id,
@@ -41,7 +42,7 @@ class SaleRepositoryImpl(
         }.catch { e ->
             // La cancelación debe propagarse: no es un error de negocio.
             if (e is CancellationException) throw e
-            emit(Result.Error("Error al obtener las ventas: ${e.message}", e))
+            emit(Result.Error(ErrorCode.FETCH_SALES_FAILED, e.message, e))
         }
 
     private fun SaleEntity.toDomain(): Sale = Sale(

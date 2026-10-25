@@ -1,10 +1,12 @@
 package com.tickets.store_cost.presentation.screen
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -26,6 +28,7 @@ import com.tickets.store_cost.presentation.screen.components.NavigationItem
 import com.tickets.store_cost.resources.Res
 import com.tickets.store_cost.resources.app_name
 import com.tickets.store_cost.resources.nav_prices
+import com.tickets.store_cost.resources.nav_open_menu
 import com.tickets.store_cost.resources.nav_sales
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -89,7 +92,10 @@ fun StoreCostApp(
                     title = { Text(text = stringResource(currentTitle)) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Text(text = "☰", style = MaterialTheme.typography.titleLarge)
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = stringResource(Res.string.nav_open_menu)
+                            )
                         }
                     }
                 )

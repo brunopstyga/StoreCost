@@ -1,6 +1,7 @@
 package com.tickets.store_cost.domain.usecase
 
 import com.tickets.store_cost.core.util.formatDateTime
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.MonthlyReport
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
@@ -31,7 +32,7 @@ class GenerateMonthlyReportUseCase(
         timeZone: TimeZone = TimeZone.currentSystemDefault()
     ): Result<MonthlyReport> {
         if (month !in 1..12) {
-            return Result.Error("El mes debe estar entre 1 y 12.")
+            return Result.Error(ErrorCode.INVALID_MONTH)
         }
 
         val (startTime, endTime) = LocalDate(year, month, 1).toMonthRange(timeZone)
@@ -50,7 +51,7 @@ class GenerateMonthlyReportUseCase(
             }
 
             is Result.Error -> salesResult
-            Result.Loading -> Result.Error("No se pudieron obtener las ventas del mes.")
+            Result.Loading -> Result.Error(ErrorCode.FETCH_MONTHLY_SALES_FAILED)
         }
     }
 

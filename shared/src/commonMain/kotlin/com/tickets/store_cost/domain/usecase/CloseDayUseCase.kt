@@ -1,6 +1,7 @@
 package com.tickets.store_cost.domain.usecase
 
 import com.tickets.store_cost.domain.model.DailyClosing
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.repository.IClosingRepository
 import com.tickets.store_cost.domain.repository.ISaleRepository
@@ -36,7 +37,7 @@ class CloseDayUseCase(
             is Result.Success -> {
                 val sales = result.data
                 if (sales.isEmpty()) {
-                    Result.Error("No hay ventas registradas para el día de hoy.")
+                    Result.Error(ErrorCode.NO_SALES_TODAY)
                 } else {
                     val total = sales.sumOf { it.subtotal }.roundToCents()
                     Result.Success(
@@ -51,7 +52,7 @@ class CloseDayUseCase(
             }
 
             is Result.Error -> result
-            Result.Loading -> Result.Error("No se pudieron obtener las ventas del día.")
+            Result.Loading -> Result.Error(ErrorCode.FETCH_DAILY_SALES_FAILED)
         }
     }
 
@@ -59,6 +60,6 @@ class CloseDayUseCase(
         when (val result = closingRepository.saveClosing(closing)) {
             is Result.Success -> Result.Success(closing)
             is Result.Error -> result
-            Result.Loading -> Result.Error("No se pudo guardar el cierre del día.")
+            Result.Loading -> Result.Error(ErrorCode.SAVE_CLOSING_FAILED)
         }
 }

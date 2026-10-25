@@ -1,5 +1,6 @@
 package com.tickets.store_cost.domain.usecase
 
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
@@ -19,7 +20,7 @@ class RegisterSaleUseCaseTest {
 
         override suspend fun registerSale(sale: Sale): Result<Unit> {
             if (shouldReturnError) {
-                return Result.Error("Database error")
+                return Result.Error(ErrorCode.REGISTER_SALE_FAILED, "Database error")
             }
             lastRegisteredSale = sale
             return Result.Success(Unit)

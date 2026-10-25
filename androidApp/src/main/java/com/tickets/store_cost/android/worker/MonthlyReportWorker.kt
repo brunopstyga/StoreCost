@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -90,6 +91,18 @@ class MonthlyReportWorker(
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
+
+        // Se repite la verificación junto al notify() para que Android Lint
+        // reconozca el permiso runtime (POST_NOTIFICATIONS) en este ámbito y no
+        // reporte MissingPermission. En API < 33 el permiso no aplica.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(
+                applicationContext,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
 
         NotificationManagerCompat.from(applicationContext)
             .notify(NOTIFICATION_ID, notification)

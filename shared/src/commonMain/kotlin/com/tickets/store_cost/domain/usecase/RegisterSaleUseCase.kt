@@ -1,5 +1,6 @@
 package com.tickets.store_cost.domain.usecase
 
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
@@ -21,10 +22,10 @@ class RegisterSaleUseCase(
         timestamp: Long = Clock.System.now().toEpochMilliseconds()
     ): Result<Unit> {
         if (basePrice <= 0.0) {
-            return Result.Error("El precio base debe ser mayor a cero.")
+            return Result.Error(ErrorCode.INVALID_BASE_PRICE)
         }
         if (quantity <= 0) {
-            return Result.Error("La cantidad debe ser mayor a cero.")
+            return Result.Error(ErrorCode.INVALID_QUANTITY)
         }
 
         val unitPrice = calculatePriceUseCase(basePrice, operationType)

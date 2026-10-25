@@ -1,6 +1,7 @@
 package com.tickets.store_cost.data.report
 
 import android.content.Context
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.MonthlyReport
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.repository.IReportFileWriter
@@ -28,7 +29,7 @@ class AndroidReportFileWriter(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Result.Error("Error al guardar el reporte: ${e.message}")
+            Result.Error(ErrorCode.SAVE_REPORT_FAILED, e.message, e)
         }
     }
 

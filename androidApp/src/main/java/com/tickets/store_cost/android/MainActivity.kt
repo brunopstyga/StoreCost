@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import com.tickets.store_cost.android.report.EmailReportLauncher
 import com.tickets.store_cost.presentation.screen.StoreCostApp
+import com.tickets.store_cost.presentation.theme.AppTheme
 
 /**
  * Actividad principal: configura el tema Material 3, renderiza el contenedor
@@ -28,7 +29,7 @@ class MainActivity : ComponentActivity() {
             handleReportIntent(intent)
         }
         setContent {
-            MyApplicationTheme {
+            AppTheme {
                 StoreCostApp(
                     onSendReport = { filePath ->
                         EmailReportLauncher.launch(this, filePath)

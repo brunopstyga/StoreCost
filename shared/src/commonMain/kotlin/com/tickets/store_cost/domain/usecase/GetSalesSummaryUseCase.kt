@@ -1,5 +1,6 @@
 package com.tickets.store_cost.domain.usecase
 
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
 import com.tickets.store_cost.domain.model.SalesSummary
@@ -48,7 +49,7 @@ class GetSalesSummaryUseCase(
         return when (salesResult) {
             is Result.Success -> Result.Success(buildSummary(salesResult.data))
             is Result.Error -> salesResult
-            else -> Result.Error("No se pudieron obtener las ventas.")
+            else -> Result.Error(ErrorCode.FETCH_SALES_FAILED)
         }
     }
 

@@ -76,11 +76,17 @@ data class SalesUiState(
     val isRegistered: Boolean
         get() = registerState is Result.Success
 
+    val registerError: Result.Error?
+        get() = registerState as? Result.Error
+
+    val historyError: Result.Error?
+        get() = summary as? Result.Error
+
     val registerErrorMessage: String?
-        get() = (registerState as? Result.Error)?.message
+        get() = registerError?.message
 
     val historyErrorMessage: String?
-        get() = (summary as? Result.Error)?.message
+        get() = historyError?.message
 
     val errorMessage: String?
         get() = registerErrorMessage ?: historyErrorMessage
@@ -94,6 +100,9 @@ data class SalesUiState(
     val savedClosing: DailyClosing?
         get() = (closingState as? Result.Success<DailyClosing>)?.data
 
+    val closingError: Result.Error?
+        get() = closingState as? Result.Error
+
     val closingErrorMessage: String?
-        get() = (closingState as? Result.Error)?.message
+        get() = closingError?.message
 }

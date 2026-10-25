@@ -3,6 +3,7 @@ package com.tickets.store_cost.presentation.viewmodel
 import com.tickets.store_cost.data.repository.FakeClosingRepository
 import com.tickets.store_cost.data.repository.FakeSaleRepository
 import com.tickets.store_cost.domain.model.DailyClosing
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
@@ -183,7 +184,8 @@ class SalesViewModelTest {
             override fun getSalesByDateRange(
                 startTime: Long,
                 endTime: Long
-            ): Flow<Result<List<Sale>>> = flowOf(Result.Error("Base de datos no disponible"))
+            ): Flow<Result<List<Sale>>> =
+                flowOf(Result.Error(ErrorCode.FETCH_SALES_FAILED, "Base de datos no disponible"))
         })
         backgroundScope.launch { errorViewModel.salesUiState.collect {} }
         advanceUntilIdle()

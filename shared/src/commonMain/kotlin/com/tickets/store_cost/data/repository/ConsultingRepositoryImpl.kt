@@ -4,6 +4,7 @@ import com.tickets.store_cost.data.local.dao.PriceConsultationDao
 import com.tickets.store_cost.data.local.entity.PriceConsultationEntity
 import com.tickets.store_cost.data.mapper.toDomain
 import com.tickets.store_cost.data.mapper.toEntity
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.resultOf
@@ -23,7 +24,7 @@ class ConsultingRepositoryImpl(
 ) : IConsultingRepository {
 
     override suspend fun insertConsultation(consultation: PriceConsultation): Result<Unit> =
-        resultOf("Error al guardar la consulta") {
+        resultOf(ErrorCode.SAVE_CONSULTATION_FAILED) {
             priceConsultationDao.insertConsultation(consultation.toEntity())
             Unit
         }
@@ -36,6 +37,6 @@ class ConsultingRepositoryImpl(
             .catch { e ->
                 // La cancelación debe propagarse: no es un error de negocio.
                 if (e is CancellationException) throw e
-                emit(Result.Error("Error al obtener el historial de consultas: ${e.message}", e))
+                emit(Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, e.message, e))
             }
 }

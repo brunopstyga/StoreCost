@@ -5,17 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
+import com.tickets.store_cost.presentation.theme.AppStyles
+import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatTimestamp
 import com.tickets.store_cost.resources.Res
@@ -33,37 +32,34 @@ import org.jetbrains.compose.resources.stringResource
 fun TransactionHistorySection(
     sales: List<Sale>,
     isLoading: Boolean,
-    errorMessage: String?,
+    error: Result.Error?,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.sm)
     ) {
-        Text(
-            text = stringResource(Res.string.history_title),
-            style = MaterialTheme.typography.titleMedium
-        )
+        SectionTitle(text = stringResource(Res.string.history_title))
 
         Text(
             text = stringResource(Res.string.common_operations_count, sales.size),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = AppStyles.Typography.caption,
+            color = AppStyles.Colors.secondaryText
         )
 
         if (isLoading) {
             LoadingBar()
         }
 
-        errorMessage?.let { message ->
-            ErrorMessage(message)
+        error?.let { error ->
+            ErrorMessage(error.displayMessage())
         }
 
         if (sales.isEmpty()) {
             if (!isLoading) {
                 Text(
                     text = stringResource(Res.string.history_empty),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AppStyles.Typography.body
                 )
             }
         } else {
@@ -71,7 +67,7 @@ fun TransactionHistorySection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.sm)
             ) {
                 items(items = sales, key = { it.id }) { sale ->
                     SaleHistoryItem(sale = sale)
@@ -83,36 +79,29 @@ fun TransactionHistorySection(
 
 @Composable
 private fun SaleHistoryItem(sale: Sale) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+    AppCard(verticalSpacing = AppStyles.Spacing.xs) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = formatCurrency(sale.subtotal),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = formatTimestamp(sale.timestamp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
             Text(
-                text = stringResource(
-                    Res.string.history_item_detail,
-                    sale.quantity,
-                    formatCurrency(sale.unitPrice)
-                ),
-                style = MaterialTheme.typography.bodyMedium
+                text = formatCurrency(sale.subtotal),
+                style = AppStyles.Typography.itemAmount
+            )
+            Text(
+                text = formatTimestamp(sale.timestamp),
+                style = AppStyles.Typography.caption,
+                color = AppStyles.Colors.secondaryText
             )
         }
+        Text(
+            text = stringResource(
+                Res.string.history_item_detail,
+                sale.quantity,
+                formatCurrency(sale.unitPrice)
+            ),
+            style = AppStyles.Typography.body
+        )
     }
 }

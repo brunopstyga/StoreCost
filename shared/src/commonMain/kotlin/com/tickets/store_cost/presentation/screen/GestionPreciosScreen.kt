@@ -17,7 +17,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,16 +26,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
 import com.tickets.store_cost.presentation.screen.components.ErrorMessage
+import com.tickets.store_cost.presentation.screen.components.SectionTitle
 import com.tickets.store_cost.presentation.screen.components.SuccessMessage
 import com.tickets.store_cost.presentation.state.ConsultingUiState
+import com.tickets.store_cost.presentation.theme.AppStyles
 import com.tickets.store_cost.presentation.util.displayName
+import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatTimestamp
 import com.tickets.store_cost.presentation.util.operationTypeDisplayName
@@ -87,8 +88,8 @@ private fun GestionPreciosContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(AppStyles.Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
     ) {
         AppOutlinedTextField(
             value = state.basePrice,
@@ -104,20 +105,14 @@ private fun GestionPreciosContent(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
-        Text(
-            text = stringResource(Res.string.prices_select_modality),
-            style = MaterialTheme.typography.titleMedium
-        )
+        SectionTitle(text = stringResource(Res.string.prices_select_modality))
 
         ModalityDropdown(
             selected = state.selectedModality,
             onModalitySelected = onModalitySelected
         )
 
-        Text(
-            text = stringResource(Res.string.prices_calculated_list),
-            style = MaterialTheme.typography.titleMedium
-        )
+        SectionTitle(text = stringResource(Res.string.prices_calculated_list))
 
         Card(
             modifier = Modifier
@@ -127,8 +122,8 @@ private fun GestionPreciosContent(
             ConsultationList(consultations = state.consultations)
         }
 
-        state.saveErrorMessage?.let { message ->
-            ErrorMessage(message)
+        state.saveError?.let { error ->
+            ErrorMessage(error.displayMessage())
         }
 
         if (state.isSaved) {
@@ -136,8 +131,8 @@ private fun GestionPreciosContent(
         }
 
         if (state.saveState == null) {
-            state.historyErrorMessage?.let { message ->
-                ErrorMessage(message)
+            state.historyError?.let { error ->
+                ErrorMessage(error.displayMessage())
             }
         }
 
@@ -203,10 +198,10 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
         is Result.Error -> Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(AppStyles.Spacing.lg),
             contentAlignment = Alignment.Center
         ) {
-            ErrorMessage(consultations.message)
+            ErrorMessage(consultations.displayMessage())
         }
 
         is Result.Success -> {
@@ -218,21 +213,21 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(AppStyles.Spacing.lg),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = stringResource(Res.string.prices_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = AppStyles.Typography.body,
+                        color = AppStyles.Colors.secondaryText
                     )
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(AppStyles.Spacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
                 ) {
                     items(items = ordered, key = { it.id }) { consultation ->
                         ConsultationRow(consultation = consultation)
@@ -247,7 +242,7 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
 private fun ConsultationRow(consultation: PriceConsultation) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.hairline)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -259,11 +254,11 @@ private fun ConsultationRow(consultation: PriceConsultation) {
                     Res.string.prices_consultation_modality,
                     operationTypeDisplayName(consultation.selectedModality)
                 ),
-                style = MaterialTheme.typography.titleSmall
+                style = AppStyles.Typography.itemTitle
             )
             Text(
                 text = formatCurrency(consultation.calculatedSubtotal),
-                style = MaterialTheme.typography.titleSmall
+                style = AppStyles.Typography.itemTitle
             )
         }
         Text(
@@ -273,13 +268,13 @@ private fun ConsultationRow(consultation: PriceConsultation) {
                 formatCurrency(consultation.calculatedUnitPrice),
                 formatCurrency(consultation.basePrice)
             ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = AppStyles.Typography.caption,
+            color = AppStyles.Colors.secondaryText
         )
         Text(
             text = formatTimestamp(consultation.timestamp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = AppStyles.Typography.caption,
+            color = AppStyles.Colors.secondaryText
         )
     }
 }

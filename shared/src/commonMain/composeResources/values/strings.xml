@@ -4,6 +4,7 @@
     <string name="app_name">Store Cost</string>
     <string name="nav_prices">Gestión de Precios</string>
     <string name="nav_sales">Ventas Diarias y Cierre</string>
+    <string name="nav_open_menu">Abrir menú</string>
 
     <!-- Comunes -->
     <string name="common_confirm">Confirmar</string>
@@ -77,4 +78,23 @@
     <string name="month_october">Octubre</string>
     <string name="month_november">Noviembre</string>
     <string name="month_december">Diciembre</string>
+
+    <!-- Errores -->
+    <string name="error_register_sale_failed">No se pudo registrar la venta.</string>
+    <string name="error_fetch_sales_failed">No se pudieron obtener las ventas.</string>
+    <string name="error_fetch_daily_sales_failed">No se pudieron obtener las ventas del día.</string>
+    <string name="error_invalid_base_price">El precio base debe ser mayor a cero.</string>
+    <string name="error_invalid_quantity">La cantidad debe ser mayor a cero.</string>
+    <string name="error_invalid_sale_amount_and_quantity">El importe y la cantidad deben ser mayores a cero.</string>
+    <string name="error_no_sales_today">No hay ventas registradas para el día de hoy.</string>
+    <string name="error_save_closing_failed">No se pudo guardar el cierre del día.</string>
+    <string name="error_fetch_closing_failed">No se pudo obtener el cierre del día.</string>
+    <string name="error_save_consultation_failed">No se pudo guardar la consulta.</string>
+    <string name="error_fetch_consultations_failed">No se pudo obtener el historial de consultas.</string>
+    <string name="error_invalid_base_price_and_quantity">El precio base y la cantidad deben ser mayores a cero.</string>
+    <string name="error_invalid_month">El mes debe estar entre 1 y 12.</string>
+    <string name="error_fetch_monthly_sales_failed">No se pudieron obtener las ventas del mes.</string>
+    <string name="error_generate_report_failed">No se pudo generar el reporte.</string>
+    <string name="error_save_report_failed">No se pudo guardar el reporte.</string>
+    <string name="error_unknown">Ocurrió un error inesperado.</string>
 </resources>

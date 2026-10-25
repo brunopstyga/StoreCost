@@ -22,11 +22,17 @@ data class ConsultingUiState(
     val isSaved: Boolean
         get() = saveState is Result.Success
 
+    val saveError: Result.Error?
+        get() = saveState as? Result.Error
+
+    val historyError: Result.Error?
+        get() = consultations as? Result.Error
+
     val saveErrorMessage: String?
-        get() = (saveState as? Result.Error)?.message
+        get() = saveError?.message
 
     val historyErrorMessage: String?
-        get() = (consultations as? Result.Error)?.message
+        get() = historyError?.message
 
     val errorMessage: String?
         get() = saveErrorMessage ?: historyErrorMessage

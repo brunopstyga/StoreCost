@@ -1,6 +1,7 @@
 package com.tickets.store_cost.data.repository
 
 import com.tickets.store_cost.domain.model.DailyClosing
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.repository.IClosingRepository
 
@@ -17,7 +18,7 @@ class FakeClosingRepository(
         get() = closings.values.toList()
 
     override suspend fun saveClosing(closing: DailyClosing): Result<Unit> {
-        if (shouldReturnError) return Result.Error("Database error")
+        if (shouldReturnError) return Result.Error(ErrorCode.SAVE_CLOSING_FAILED, "Database error")
 
         val stored = closing.copy(id = nextId++)
         closings[stored.closingDate] = stored
@@ -25,7 +26,7 @@ class FakeClosingRepository(
     }
 
     override suspend fun getClosingByDate(date: String): Result<DailyClosing?> {
-        if (shouldReturnError) return Result.Error("Database error")
+        if (shouldReturnError) return Result.Error(ErrorCode.FETCH_CLOSING_FAILED, "Database error")
         return Result.Success(closings[date])
     }
 }

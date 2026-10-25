@@ -3,6 +3,7 @@ package com.tickets.store_cost.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tickets.store_cost.domain.model.DailyClosing
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
@@ -25,7 +26,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -81,25 +81,32 @@ class SalesViewModel(
                 initialValue = Result.Loading
             )
 
-    private val baseState: Flow<SalesUiState> =
-        combine(formState, query, refreshTick) { form, currentQuery, _ ->
-            Triple(form, currentQuery, Unit)
-        }
-            .flatMapLatest { (form, currentQuery, _) ->
-                getSalesSummaryUseCase
-                    .observeSalesSummary(currentQuery.startTime, currentQuery.endTime)
-                    .map { result ->
-                        SalesUiState(
-                            period = currentQuery.period,
-                            startTime = currentQuery.startTime,
-                            endTime = currentQuery.endTime,
-                            amount = form.amount,
-                            quantity = form.quantity,
-                            registerState = form.registerState,
-                            summary = result
-                        )
-                    }
+    private val summaryState: Flow<Result<SalesSummary>> =
+        combine(query, refreshTick) { currentQuery, _ -> currentQuery }
+            .flatMapLatest { currentQuery ->
+                getSalesSummaryUseCase.observeSalesSummary(
+                    currentQuery.startTime,
+                    currentQuery.endTime
+                )
             }
+
+    /**
+     * El formulario se combina por separado del resumen: escribir en un campo
+     * no debe reiniciar la consulta a Room ni retrasar la actualización del
+     * estado (lo que provocaba saltos del cursor en los `TextField`).
+     */
+    private val baseState: Flow<SalesUiState> =
+        combine(formState, query, summaryState) { form, currentQuery, summary ->
+            SalesUiState(
+                period = currentQuery.period,
+                startTime = currentQuery.startTime,
+                endTime = currentQuery.endTime,
+                amount = form.amount,
+                quantity = form.quantity,
+                registerState = form.registerState,
+                summary = summary
+            )
+        }
 
     val salesUiState: StateFlow<SalesUiState> =
         combine(
@@ -145,7 +152,7 @@ class SalesViewModel(
         if (amount == null || amount <= 0.0 || quantity == null || quantity <= 0) {
             formState.update {
                 it.copy(
-                    registerState = Result.Error("El importe y la cantidad deben ser mayores a cero.")
+                    registerState = Result.Error(ErrorCode.INVALID_SALE_AMOUNT_AND_QUANTITY)
                 )
             }
             return
@@ -195,7 +202,7 @@ class SalesViewModel(
      */
     fun onRequestCloseDay() {
         if (!salesUiState.value.canCloseDay) {
-            closingState.value = Result.Error("No hay ventas registradas para el día de hoy.")
+            closingState.value = Result.Error(ErrorCode.NO_SALES_TODAY)
             return
         }
 

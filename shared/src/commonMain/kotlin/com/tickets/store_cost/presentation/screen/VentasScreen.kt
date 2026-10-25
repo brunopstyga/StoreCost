@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -26,18 +24,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tickets.store_cost.domain.util.toDayRange
+import com.tickets.store_cost.presentation.screen.components.AppCard
 import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
 import com.tickets.store_cost.presentation.screen.components.ErrorMessage
 import com.tickets.store_cost.presentation.screen.components.LoadingBar
 import com.tickets.store_cost.presentation.screen.components.MonthlySummarySection
+import com.tickets.store_cost.presentation.screen.components.SectionTitle
 import com.tickets.store_cost.presentation.screen.components.SuccessMessage
 import com.tickets.store_cost.presentation.screen.components.TransactionHistorySection
 import com.tickets.store_cost.presentation.state.ClosingPeriod
 import com.tickets.store_cost.presentation.state.ReportUiState
 import com.tickets.store_cost.presentation.state.SalesUiState
+import com.tickets.store_cost.presentation.theme.AppStyles
+import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatTimestamp
 import com.tickets.store_cost.presentation.viewmodel.ReportViewModel
@@ -132,8 +133,8 @@ private fun VentasContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(AppStyles.Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
     ) {
         TabRow(selectedTabIndex = state.period.ordinal) {
             ClosingPeriod.entries.forEach { period ->
@@ -158,7 +159,7 @@ private fun VentasContent(
             ClosingPeriod.HISTORY -> TransactionHistorySection(
                 sales = state.sales,
                 isLoading = state.isLoading,
-                errorMessage = state.historyErrorMessage,
+                error = state.historyError,
                 modifier = Modifier.weight(1f)
             )
 
@@ -177,7 +178,7 @@ private fun VentasContent(
             onDismissRequest = onDismissClosingDialog,
             title = { Text(text = stringResource(Res.string.sales_confirm_closing_title)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.xs)) {
                     Text(
                         text = stringResource(
                             Res.string.sales_closing_total_today,
@@ -233,14 +234,11 @@ private fun DailySalesContent(
         LoadingBar()
     }
 
-    state.historyErrorMessage?.let { message ->
-        ErrorMessage(message)
+    state.historyError?.let { error ->
+        ErrorMessage(error.displayMessage())
     }
 
-    Text(
-        text = stringResource(Res.string.sales_register_title),
-        style = MaterialTheme.typography.titleMedium
-    )
+    SectionTitle(text = stringResource(Res.string.sales_register_title))
 
     AppOutlinedTextField(
         value = state.amount,
@@ -268,8 +266,8 @@ private fun DailySalesContent(
         SuccessMessage(stringResource(Res.string.sales_registered_success))
     }
 
-    state.registerErrorMessage?.let { message ->
-        ErrorMessage(message)
+    state.registerError?.let { error ->
+        ErrorMessage(error.displayMessage())
     }
 
     Button(
@@ -281,42 +279,35 @@ private fun DailySalesContent(
     }
 
     state.savedClosing?.let { closing ->
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.sales_closing_saved),
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Text(
-                    text = stringResource(
-                        Res.string.sales_closing_total,
-                        formatCurrency(closing.totalAmount)
-                    ),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = stringResource(
-                        Res.string.common_operations_count,
-                        closing.salesCount
-                    ),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = formatTimestamp(closing.closedAt),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        AppCard(verticalSpacing = AppStyles.Spacing.hairline) {
+            Text(
+                text = stringResource(Res.string.sales_closing_saved),
+                style = AppStyles.Typography.itemTitle
+            )
+            Text(
+                text = stringResource(
+                    Res.string.sales_closing_total,
+                    formatCurrency(closing.totalAmount)
+                ),
+                style = AppStyles.Typography.sectionTitle
+            )
+            Text(
+                text = stringResource(
+                    Res.string.common_operations_count,
+                    closing.salesCount
+                ),
+                style = AppStyles.Typography.caption
+            )
+            Text(
+                text = formatTimestamp(closing.closedAt),
+                style = AppStyles.Typography.caption,
+                color = AppStyles.Colors.secondaryText
+            )
         }
     }
 
-    state.closingErrorMessage?.let { message ->
-        ErrorMessage(message)
+    state.closingError?.let { error ->
+        ErrorMessage(error.displayMessage())
     }
 }
 

@@ -1,6 +1,7 @@
 package com.tickets.store_cost.domain.usecase
 
 import com.tickets.store_cost.data.repository.FakeSaleRepository
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.MonthlyReport
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
@@ -93,7 +94,8 @@ class GenerateMonthlyReportUseCaseTest {
 
         val result = useCase(year = 2024, month = 13, timeZone = timeZone)
 
-        assertIs<Result.Error>(result)
+        val error = assertIs<Result.Error>(result)
+        assertEquals(ErrorCode.INVALID_MONTH, error.code)
     }
 
     @Test
@@ -104,13 +106,15 @@ class GenerateMonthlyReportUseCaseTest {
             override fun getSalesByDateRange(
                 startTime: Long,
                 endTime: Long
-            ): Flow<Result<List<Sale>>> = flowOf(Result.Error("Base de datos no disponible"))
+            ): Flow<Result<List<Sale>>> =
+                flowOf(Result.Error(ErrorCode.FETCH_MONTHLY_SALES_FAILED, "Base de datos no disponible"))
         }
         val useCase = GenerateMonthlyReportUseCase(repository)
 
         val result = useCase(year = 2024, month = 3, timeZone = timeZone)
 
         val error = assertIs<Result.Error>(result)
-        assertEquals("Base de datos no disponible", error.message)
+        assertEquals(ErrorCode.FETCH_MONTHLY_SALES_FAILED, error.code)
+        assertEquals("Base de datos no disponible", error.detail)
     }
 }

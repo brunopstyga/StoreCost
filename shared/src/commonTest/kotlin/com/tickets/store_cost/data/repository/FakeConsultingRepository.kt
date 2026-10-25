@@ -1,5 +1,6 @@
 package com.tickets.store_cost.data.repository
 
+import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.repository.IConsultingRepository
@@ -25,7 +26,7 @@ class FakeConsultingRepository(
 
     override suspend fun insertConsultation(consultation: PriceConsultation): Result<Unit> {
         if (shouldReturnError) {
-            return Result.Error("Database error")
+            return Result.Error(ErrorCode.SAVE_CONSULTATION_FAILED, "Database error")
         }
         val stored = consultation.copy(id = nextId++)
         consultationsFlow.value = consultationsFlow.value + stored
@@ -35,7 +36,7 @@ class FakeConsultingRepository(
     override fun getAllConsultations(): Flow<Result<List<PriceConsultation>>> =
         consultationsFlow.map { consultations ->
             if (shouldReturnError) {
-                Result.Error("Database error")
+                Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, "Database error")
             } else {
                 Result.Success(consultations)
             }
