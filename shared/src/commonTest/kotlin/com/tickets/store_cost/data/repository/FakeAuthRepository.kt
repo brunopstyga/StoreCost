@@ -64,6 +64,6 @@ class FakeAuthRepository(
     }
 
     companion object {
-        const val DEFAULT_PASSWORD: String = "clave123"
+        const val DEFAULT_PASSWORD: String = "1234"
     }
 }

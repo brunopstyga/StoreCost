@@ -8,7 +8,7 @@
     <string name="nav_logout">Cerrar Sesión</string>
 
     <!-- Login -->
-    <string name="login_title">Store Cost</string>
+    <string name="login_title">Piel de luna</string>
     <string name="login_subtitle">Acceso al Sistema</string>
     <string name="login_password_label">Contraseña</string>
     <string name="login_button">INGRESAR</string>

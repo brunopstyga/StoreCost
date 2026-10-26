@@ -23,6 +23,6 @@ class Sha256Test {
 
     @Test
     fun testHashIsDeterministic() {
-        assertEquals(Sha256.hash("storecost"), Sha256.hash("storecost"))
+        assertEquals(Sha256.hash("1234"), Sha256.hash("1234"))
     }
 }

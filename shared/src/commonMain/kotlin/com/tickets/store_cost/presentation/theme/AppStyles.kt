@@ -41,5 +41,11 @@ object AppStyles {
         val secondaryText: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
         val error: Color @Composable get() = MaterialTheme.colorScheme.error
         val success: Color @Composable get() = MaterialTheme.colorScheme.primary
+
+        /** Fondo de las tarjetas del historial registradas en el día actual. */
+        val todayHistoryCard: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
+
+        /** Fondo de las tarjetas del historial registradas en días anteriores. */
+        val pastHistoryCard: Color @Composable get() = MaterialTheme.colorScheme.surfaceVariant
     }
 }

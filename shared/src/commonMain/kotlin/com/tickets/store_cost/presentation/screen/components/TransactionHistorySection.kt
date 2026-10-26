@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
+import com.tickets.store_cost.domain.util.toDayRange
+import com.tickets.store_cost.domain.util.todayIn
 import com.tickets.store_cost.presentation.theme.AppStyles
 import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
@@ -35,6 +38,8 @@ fun TransactionHistorySection(
     error: Result.Error?,
     modifier: Modifier = Modifier
 ) {
+    val todayRange = todayIn().toDayRange()
+
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.sm)
@@ -70,7 +75,10 @@ fun TransactionHistorySection(
                 verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.sm)
             ) {
                 items(items = sales, key = { it.id }) { sale ->
-                    SaleHistoryItem(sale = sale)
+                    SaleHistoryItem(
+                        sale = sale,
+                        isToday = sale.timestamp in todayRange.first..todayRange.second
+                    )
                 }
             }
         }
@@ -78,8 +86,17 @@ fun TransactionHistorySection(
 }
 
 @Composable
-private fun SaleHistoryItem(sale: Sale) {
-    AppCard(verticalSpacing = AppStyles.Spacing.xs) {
+private fun SaleHistoryItem(sale: Sale, isToday: Boolean) {
+    AppCard(
+        verticalSpacing = AppStyles.Spacing.xs,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isToday) {
+                AppStyles.Colors.todayHistoryCard
+            } else {
+                AppStyles.Colors.pastHistoryCard
+            }
+        )
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

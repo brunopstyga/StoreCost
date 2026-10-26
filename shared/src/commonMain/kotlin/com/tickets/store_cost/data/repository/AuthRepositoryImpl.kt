@@ -49,12 +49,13 @@ class AuthRepositoryImpl(
         }
 
     /**
-     * Siembra una contraseña inicial mientras la app no tenga una pantalla de
-     * configuración de credenciales. Una vez guardada, el usuario puede
-     * reemplazarla a través de [saveInitialPassword].
+     * Siembra la contraseña inicial o actualiza la contraseña heredada
+     * ("storecost") a la nueva clave por defecto. Las contraseñas
+     * personalizadas se respetan.
      */
     private fun ensureInitialPassword() {
-        if (!localDataSource.hasPassword()) {
+        val usesLegacyDefault = localDataSource.matchesPassword(LEGACY_INITIAL_PASSWORD)
+        if (!localDataSource.hasPassword() || usesLegacyDefault) {
             localDataSource.savePassword(DEFAULT_INITIAL_PASSWORD)
         }
     }
@@ -63,6 +64,12 @@ class AuthRepositoryImpl(
         /**
          * Contraseña inicial documentada para el primer acceso.
          */
-        const val DEFAULT_INITIAL_PASSWORD: String = "storecost"
+        const val DEFAULT_INITIAL_PASSWORD: String = "1234"
+
+        /**
+         * Contraseña usada por versiones anteriores. Solo se utiliza para
+         * migrarla automáticamente a [DEFAULT_INITIAL_PASSWORD].
+         */
+        private const val LEGACY_INITIAL_PASSWORD: String = "storecost"
     }
 }
