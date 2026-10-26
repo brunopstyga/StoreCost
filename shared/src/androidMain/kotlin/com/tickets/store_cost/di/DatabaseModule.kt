@@ -3,11 +3,14 @@ package com.tickets.store_cost.di
 import android.content.Context
 import androidx.room.Room
 import com.tickets.store_cost.data.local.AppDatabase
+import com.tickets.store_cost.data.local.KeyValueStorage
+import com.tickets.store_cost.data.local.SharedPreferencesKeyValueStorage
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
 /**
- * Módulo de Koin específico de Android que provee la instancia única de Room.
+ * Módulo de Koin específico de Android que provee la instancia única de Room
+ * y el almacenamiento local de credenciales/sesión.
  * Requiere que la aplicación registre el [Context] al iniciar Koin (androidContext()).
  */
 @Module
@@ -18,4 +21,8 @@ class DatabaseModule {
         Room.databaseBuilder<AppDatabase>(context, "store_cost.db")
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
+
+    @Single
+    fun provideKeyValueStorage(context: Context): KeyValueStorage =
+        SharedPreferencesKeyValueStorage(context)
 }

@@ -36,6 +36,8 @@ class SaleRepositoryImplTest {
             failure?.let { throw it }
             return sales
         }
+
+        override suspend fun deleteSalesBefore(limit: Long): Int = 0
     }
 
     private fun saleEntity(): SaleEntity = SaleEntity(

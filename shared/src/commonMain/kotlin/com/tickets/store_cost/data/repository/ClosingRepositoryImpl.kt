@@ -28,4 +28,14 @@ class ClosingRepositoryImpl(
         resultOf(ErrorCode.FETCH_CLOSING_FAILED) {
             dailyClosingDao.getClosingByDate(date)?.toDomain()
         }
+
+    override suspend fun getAllClosings(): Result<List<DailyClosing>> =
+        resultOf(ErrorCode.FETCH_CLOSING_FAILED) {
+            dailyClosingDao.getAllClosings().map { it.toDomain() }
+        }
+
+    override suspend fun deleteClosingsBefore(limit: Long): Result<Int> =
+        resultOf(ErrorCode.DELETE_CLOSINGS_FAILED) {
+            dailyClosingDao.deleteClosingsBefore(limit)
+        }
 }

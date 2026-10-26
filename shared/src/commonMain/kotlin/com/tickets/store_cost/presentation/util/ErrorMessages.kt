@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.resources.Res
+import com.tickets.store_cost.resources.error_delete_closings_failed
+import com.tickets.store_cost.resources.error_delete_prices_failed
+import com.tickets.store_cost.resources.error_delete_sales_failed
 import com.tickets.store_cost.resources.error_fetch_closing_failed
 import com.tickets.store_cost.resources.error_fetch_consultations_failed
 import com.tickets.store_cost.resources.error_fetch_daily_sales_failed
@@ -19,7 +22,12 @@ import com.tickets.store_cost.resources.error_no_sales_today
 import com.tickets.store_cost.resources.error_register_sale_failed
 import com.tickets.store_cost.resources.error_save_closing_failed
 import com.tickets.store_cost.resources.error_save_consultation_failed
+import com.tickets.store_cost.resources.error_save_password_failed
 import com.tickets.store_cost.resources.error_save_report_failed
+import com.tickets.store_cost.resources.error_empty_password
+import com.tickets.store_cost.resources.error_invalid_password
+import com.tickets.store_cost.resources.error_login_failed
+import com.tickets.store_cost.resources.error_logout_failed
 import com.tickets.store_cost.resources.error_unknown
 import org.jetbrains.compose.resources.stringResource
 
@@ -51,6 +59,14 @@ fun ErrorCode.displayMessage(): String = when (this) {
         stringResource(Res.string.error_fetch_monthly_sales_failed)
     ErrorCode.GENERATE_REPORT_FAILED -> stringResource(Res.string.error_generate_report_failed)
     ErrorCode.SAVE_REPORT_FAILED -> stringResource(Res.string.error_save_report_failed)
+    ErrorCode.DELETE_PRICES_FAILED -> stringResource(Res.string.error_delete_prices_failed)
+    ErrorCode.DELETE_SALES_FAILED -> stringResource(Res.string.error_delete_sales_failed)
+    ErrorCode.DELETE_CLOSINGS_FAILED -> stringResource(Res.string.error_delete_closings_failed)
+    ErrorCode.EMPTY_PASSWORD -> stringResource(Res.string.error_empty_password)
+    ErrorCode.INVALID_PASSWORD -> stringResource(Res.string.error_invalid_password)
+    ErrorCode.LOGIN_FAILED -> stringResource(Res.string.error_login_failed)
+    ErrorCode.LOGOUT_FAILED -> stringResource(Res.string.error_logout_failed)
+    ErrorCode.SAVE_PASSWORD_FAILED -> stringResource(Res.string.error_save_password_failed)
     ErrorCode.UNKNOWN -> stringResource(Res.string.error_unknown)
 }
 

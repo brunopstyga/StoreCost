@@ -186,6 +186,8 @@ class SalesViewModelTest {
                 endTime: Long
             ): Flow<Result<List<Sale>>> =
                 flowOf(Result.Error(ErrorCode.FETCH_SALES_FAILED, "Base de datos no disponible"))
+
+            override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
         })
         backgroundScope.launch { errorViewModel.salesUiState.collect {} }
         advanceUntilIdle()
@@ -368,6 +370,8 @@ class SalesViewModelTest {
                 requestedRanges += startTime to endTime
                 return flowOf(Result.Success(historicalSales.filter { it.timestamp in startTime..endTime }))
             }
+
+            override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
         }
         val historyViewModel = buildViewModel(historyRepository)
         backgroundScope.launch { historyViewModel.salesUiState.collect {} }
@@ -485,4 +489,6 @@ private class InMemorySaleRepository(initialSales: List<Sale>) : ISaleRepository
         salesFlow.map { sales ->
             Result.Success(sales.filter { it.timestamp in startTime..endTime })
         }
+
+    override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
 }

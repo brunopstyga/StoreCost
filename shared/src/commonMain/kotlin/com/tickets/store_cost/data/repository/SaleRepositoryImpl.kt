@@ -45,6 +45,11 @@ class SaleRepositoryImpl(
             emit(Result.Error(ErrorCode.FETCH_SALES_FAILED, e.message, e))
         }
 
+    override suspend fun deleteSalesBefore(limit: Long): Result<Int> =
+        resultOf(ErrorCode.DELETE_SALES_FAILED) {
+            saleDao.deleteSalesBefore(limit)
+        }
+
     private fun SaleEntity.toDomain(): Sale = Sale(
         id = id,
         basePrice = basePrice,

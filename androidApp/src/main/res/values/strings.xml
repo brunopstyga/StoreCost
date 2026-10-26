@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Store Cost</string>
+    <string name="app_name">Piel de luna</string>
 
     <!-- Notificaciones -->
     <string name="notification_channel_name">Reportes mensuales</string>
     <string name="notification_channel_description">Avisos cuando el reporte mensual está listo para enviar.</string>
     <string name="notification_title">Reporte mensual listo</string>
     <string name="notification_text">Reporte de %1$s generado. Toca para enviarlo por correo.</string>
+    <string name="biweekly_notification_channel_name">Respaldos quincenales</string>
+    <string name="biweekly_notification_channel_description">Avisos cuando el respaldo quincenal de ventas y cierres está listo para enviar.</string>
+    <string name="biweekly_notification_title">Respaldo quincenal listo</string>
+    <string name="biweekly_notification_text">Respaldo generado con %1$d ventas y %2$d cierres. Toca para enviarlo por correo.</string>
 
     <!-- Correo -->
     <string name="email_subject">Reporte Mensual de Ventas - Store Cost</string>

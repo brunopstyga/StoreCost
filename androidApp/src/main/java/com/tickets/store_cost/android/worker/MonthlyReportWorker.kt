@@ -1,20 +1,11 @@
 package com.tickets.store_cost.android.worker
 
-import android.Manifest
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
-import com.tickets.store_cost.android.MainActivity
 import com.tickets.store_cost.android.R
+import com.tickets.store_cost.android.notification.ReportNotificationSender
 import com.tickets.store_cost.domain.model.Result as DomainResult
 import com.tickets.store_cost.domain.repository.IReportFileWriter
 import com.tickets.store_cost.domain.usecase.GenerateMonthlyReportUseCase
@@ -70,53 +61,14 @@ class MonthlyReportWorker(
     }
 
     private fun notifyReportReady(filePath: String, periodLabel: String) {
-        if (!notificationsAllowed()) return
-
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            putExtra(MainActivity.EXTRA_REPORT_PATH, filePath)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext,
-            NOTIFICATION_ID,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        ReportNotificationSender.sendReportReady(
+            context = applicationContext,
+            channelId = CHANNEL_ID,
+            notificationId = NOTIFICATION_ID,
+            title = applicationContext.getString(R.string.notification_title),
+            text = applicationContext.getString(R.string.notification_text, periodLabel),
+            reportPath = filePath
         )
-        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_notify_more)
-            .setContentTitle(applicationContext.getString(R.string.notification_title))
-            .setContentText(
-                applicationContext.getString(R.string.notification_text, periodLabel)
-            )
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-
-        // Se repite la verificación junto al notify() para que Android Lint
-        // reconozca el permiso runtime (POST_NOTIFICATIONS) en este ámbito y no
-        // reporte MissingPermission. En API < 33 el permiso no aplica.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ActivityCompat.checkSelfPermission(
-                applicationContext,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-
-        NotificationManagerCompat.from(applicationContext)
-            .notify(NOTIFICATION_ID, notification)
-    }
-
-    private fun notificationsAllowed(): Boolean {
-        if (!NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
-            return false
-        }
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(
-                applicationContext,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
     }
 
     private data class ReportPeriod(val year: Int, val month: Int) {

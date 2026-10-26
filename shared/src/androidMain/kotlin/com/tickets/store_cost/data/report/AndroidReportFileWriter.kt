@@ -2,7 +2,6 @@ package com.tickets.store_cost.data.report
 
 import android.content.Context
 import com.tickets.store_cost.domain.model.ErrorCode
-import com.tickets.store_cost.domain.model.MonthlyReport
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.repository.IReportFileWriter
 import kotlinx.coroutines.Dispatchers
@@ -20,18 +19,19 @@ class AndroidReportFileWriter(
     private val context: Context
 ) : IReportFileWriter {
 
-    override suspend fun write(report: MonthlyReport): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val directory = File(context.cacheDir, REPORTS_DIRECTORY).apply { mkdirs() }
-            val file = File(directory, report.fileName)
-            file.writeText(report.content)
-            Result.Success(file.absolutePath)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.Error(ErrorCode.SAVE_REPORT_FAILED, e.message, e)
+    override suspend fun write(fileName: String, content: String): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                val directory = File(context.cacheDir, REPORTS_DIRECTORY).apply { mkdirs() }
+                val file = File(directory, fileName)
+                file.writeText(content)
+                Result.Success(file.absolutePath)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.Error(ErrorCode.SAVE_REPORT_FAILED, e.message, e)
+            }
         }
-    }
 
     private companion object {
         const val REPORTS_DIRECTORY = "reports"

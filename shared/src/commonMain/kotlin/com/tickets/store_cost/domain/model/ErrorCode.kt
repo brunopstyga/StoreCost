@@ -24,11 +24,23 @@ enum class ErrorCode {
     FETCH_CONSULTATIONS_FAILED,
     INVALID_BASE_PRICE_AND_QUANTITY,
 
-    // Reporte mensual
+    // Reporte mensual y respaldos
     INVALID_MONTH,
     FETCH_MONTHLY_SALES_FAILED,
     GENERATE_REPORT_FAILED,
     SAVE_REPORT_FAILED,
+
+    // Limpieza periódica de datos
+    DELETE_PRICES_FAILED,
+    DELETE_SALES_FAILED,
+    DELETE_CLOSINGS_FAILED,
+
+    // Autenticación local
+    EMPTY_PASSWORD,
+    INVALID_PASSWORD,
+    LOGIN_FAILED,
+    LOGOUT_FAILED,
+    SAVE_PASSWORD_FAILED,
 
     // Fallback
     UNKNOWN

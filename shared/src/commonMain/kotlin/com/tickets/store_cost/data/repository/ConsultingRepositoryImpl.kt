@@ -39,4 +39,9 @@ class ConsultingRepositoryImpl(
                 if (e is CancellationException) throw e
                 emit(Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, e.message, e))
             }
+
+    override suspend fun deleteConsultationsBefore(limit: Long): Result<Int> =
+        resultOf(ErrorCode.DELETE_PRICES_FAILED) {
+            priceConsultationDao.deleteConsultationsBefore(limit)
+        }
 }

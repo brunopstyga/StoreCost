@@ -15,4 +15,11 @@ interface PriceConsultationDao {
 
     @Query("SELECT * FROM price_consultations ORDER BY timestamp DESC")
     fun getAllConsultations(): Flow<List<PriceConsultationEntity>>
+
+    /**
+     * Elimina las consultas de precios anteriores al límite indicado.
+     * Devuelve la cantidad de filas borradas.
+     */
+    @Query("DELETE FROM price_consultations WHERE timestamp < :limit")
+    suspend fun deleteConsultationsBefore(limit: Long): Int
 }

@@ -4,10 +4,13 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.tickets.store_cost.android.R
+import com.tickets.store_cost.android.worker.BiweeklySalesBackupWorker
+import com.tickets.store_cost.android.worker.DailyPriceCleanupWorker
 import com.tickets.store_cost.android.worker.MonthlyReportWorker
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -17,8 +20,12 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 /**
- * Punto de entrada de Android que inicializa Koin, crea el canal de
- * notificaciones y programa la verificación periódica del reporte mensual.
+ * Punto de entrada de Android que inicializa Koin, crea los canales de
+ * notificaciones y programa las tareas periódicas de WorkManager:
+ *
+ * - **Diaria**: purga de consultas de precios de más de 24 horas.
+ * - **Quincenal**: respaldo de ventas/cierres y purga de más de 15 días.
+ * - **Mensual**: generación del reporte mensual (Tarea 03).
  */
 class StoreCostApplication : Application() {
 
@@ -31,21 +38,33 @@ class StoreCostApplication : Application() {
                 com_tickets_store_cost_di_DatabaseModule
             )
         }
-        createNotificationChannel()
+        createNotificationChannels()
         scheduleMonthlyReportWorker()
+        scheduleDailyPriceCleanupWorker()
+        scheduleBiweeklySalesBackupWorker()
     }
 
-    private fun createNotificationChannel() {
+    private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                MonthlyReportWorker.CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = getString(R.string.notification_channel_description)
-            }
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    MonthlyReportWorker.CHANNEL_ID,
+                    getString(R.string.notification_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT
+                ).apply {
+                    description = getString(R.string.notification_channel_description)
+                }
+            )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    BiweeklySalesBackupWorker.CHANNEL_ID,
+                    getString(R.string.biweekly_notification_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT
+                ).apply {
+                    description = getString(R.string.biweekly_notification_channel_description)
+                }
+            )
         }
     }
 
@@ -61,6 +80,44 @@ class StoreCostApplication : Application() {
             request
         )
     }
+
+    /**
+     * Purga diaria de consultas de precios. Usa [ExistingPeriodicWorkPolicy.UPDATE]
+     * para que los cambios de restricciones se apliquen en actualizaciones.
+     */
+    private fun scheduleDailyPriceCleanupWorker() {
+        val request = PeriodicWorkRequestBuilder<DailyPriceCleanupWorker>(1, TimeUnit.DAYS)
+            .setConstraints(backgroundConstraints())
+            .addTag(DailyPriceCleanupWorker.WORK_NAME)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            DailyPriceCleanupWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            request
+        )
+    }
+
+    /**
+     * Respaldo + purga quincenal de ventas y cierres.
+     */
+    private fun scheduleBiweeklySalesBackupWorker() {
+        val request = PeriodicWorkRequestBuilder<BiweeklySalesBackupWorker>(15, TimeUnit.DAYS)
+            .setConstraints(backgroundConstraints())
+            .addTag(BiweeklySalesBackupWorker.WORK_NAME)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            BiweeklySalesBackupWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            request
+        )
+    }
+
+    private fun backgroundConstraints(): Constraints =
+        Constraints.Builder()
+            .setRequiresBatteryNotLow(true)
+            .build()
 
     /**
      * Primera ejecución: el día 1 del próximo mes a las 00:05. A partir de ahí

@@ -13,4 +13,11 @@ interface SaleDao {
 
     @Query("SELECT * FROM sales WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp DESC")
     suspend fun getSalesByDateRange(startTime: Long, endTime: Long): List<SaleEntity>
+
+    /**
+     * Elimina las ventas anteriores al límite indicado.
+     * Devuelve la cantidad de filas borradas.
+     */
+    @Query("DELETE FROM sales WHERE timestamp < :limit")
+    suspend fun deleteSalesBefore(limit: Long): Int
 }

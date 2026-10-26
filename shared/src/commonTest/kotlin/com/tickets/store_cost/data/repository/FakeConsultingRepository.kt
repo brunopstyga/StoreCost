@@ -41,4 +41,13 @@ class FakeConsultingRepository(
                 Result.Success(consultations)
             }
         }
+
+    override suspend fun deleteConsultationsBefore(limit: Long): Result<Int> {
+        if (shouldReturnError) {
+            return Result.Error(ErrorCode.DELETE_PRICES_FAILED, "Database error")
+        }
+        val (expired, remaining) = consultationsFlow.value.partition { it.timestamp < limit }
+        consultationsFlow.value = remaining
+        return Result.Success(expired.size)
+    }
 }

@@ -886,5 +886,50 @@ Tarea 05 - Login Básico por Contraseña y Refactorización de Clases Base
   - [ ] **Funciones y Métodos Duplicados**:
      - Auditar clases, ViewModels y utilidades en búsqueda de lógica, validaciones o transformaciones de datos repetidas.
      - Centralizar dichos métodos en funciones de extensión o utilidades compartidas para mantener el código limpio y evitar la duplicación (principio DRY).
-  
-  
+	 
+# Tarea 07 - Implementación de Tareas Periódicas y Políticas Diferenciadas de Limpieza de Base de Datos (Room, Permisos y WorkManager)
+
+## Objetivo
+Configurar e implementar tareas periódicas en segundo plano utilizando WorkManager para gestionar políticas diferenciadas de retención de datos según su tipo y pantalla de origen:
+1. **Gestión de Precios**: Limpieza diaria de registros/precios temporales.
+2. **Ventas Diarias y Cierre**: Generación de reporte quincenal, exportación de respaldos, notificación al usuario y posterior purga de registros mayores a 15 días.
+3. **Validación de Permisos**: Garantizar la verificación de permisos en tiempo de ejecución (ej. notificaciones) previo al envío de alertas.
+
+---
+
+## Arquitectura y Distribución de Responsabilidades (Clean Architecture - KMP)
+* **Módulo `shared`**: Define las consultas de borrado específicas por entidad/tabla en Room, expone los métodos en repositorios y contiene los Casos de Uso con los períodos de corte correspondientes (diario vs. quincenal).
+* **Módulo `androidApp` (Nativo)**: Implementa los `Worker` de WorkManager (o la orquestación periódica), gestiona la validación de permisos en tiempo de ejecución y programa los intervalos de ejecución.
+
+---
+
+## Pasos a Ejecutar
+
+### 1. Capa de Datos y Negocio (`shared`)
+- [ ] **Definición de Consultas de Borrado Diferenciadas (Room DAO)**:
+  - Crear consulta para eliminar registros de la pantalla de **Gestión de Precios** con antigüedad diaria (`DELETE FROM precios_table WHERE timestamp < :limiteDiario`).
+  - Crear consulta para eliminar registros de **Ventas Diarias y Cierre** con antigüedad superior a 15 días (`DELETE FROM ventas_cierre_table WHERE timestamp < :limiteQuincenal`).
+- [ ] **Actualización de Repositorios**: Exponer ambas operaciones de borrado independiente a la capa de dominio.
+- [ ] **Creación de Casos de Uso**:
+  - `CleanDailyPricesUseCase`: Calcula el límite de 24 horas y ejecuta el borrado de precios.
+  - `CleanBiweeklySalesUseCase`: Calcula el límite de 15 días y borra las ventas/cierres procesados.
+
+### 2. Validación y Gestión de Permisos (`androidApp`)
+- [ ] **Verificación de Permisos**: Comprobar el estado actual de los permisos del sistema (por ejemplo, `POST_NOTIFICATIONS` en Android 13+).
+- [ ] **Manejo Seguro**: Garantizar que las notificaciones solo se lancen si los permisos están concedidos, evitando fallos en tiempo de ejecución.
+
+### 3. Refactorización y Programación de Tareas en Segundo Plano (`androidApp`)
+- [ ] **Estrategia de Ejecución y Tareas Periódicas**:
+  - **Proceso Diario (Gestión de Precios)**: Ejecutar la purga de precios temporales/diarios.
+  - **Proceso Quincenal (Ventas y Cierre)**:
+    1. Validar permisos de notificación.
+    2. Generar el reporte/respaldo quincenal con los datos de ventas y cierres.
+    3. Guardar el archivo físico en el dispositivo.
+    4. Notificar al usuario que el reporte está listo para ser enviado por correo electrónico.
+    5. Invocar el Caso de Uso `CleanBiweeklySalesUseCase` para purgar de Room las ventas y cierres de más de 15 días.
+- [ ] **Configuración en WorkManager**: Programar las solicitudes periódicas con sus respectivos intervalos (diario y cada 15 días) y restricciones de sistema.
+
+### 4. Verificación y Pruebas
+- [ ] Validar que los datos de **Gestión de Precios** se limpien al día sin afectar el historial de **Ventas y Cierre**.
+- [ ] Verificar que el reporte quincenal incluya todo el historial completo de ventas antes de que se ejecute la limpieza de los 15 días.
+- [ ] Confirmar la recepción de notificaciones y la retención correcta en la base de datos Room.

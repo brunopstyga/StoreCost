@@ -5,6 +5,16 @@
     <string name="nav_prices">Gestión de Precios</string>
     <string name="nav_sales">Ventas Diarias y Cierre</string>
     <string name="nav_open_menu">Abrir menú</string>
+    <string name="nav_logout">Cerrar Sesión</string>
+
+    <!-- Login -->
+    <string name="login_title">Store Cost</string>
+    <string name="login_subtitle">Acceso al Sistema</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_button">INGRESAR</string>
+    <string name="login_loading">INGRESANDO...</string>
+    <string name="login_show_password">Mostrar</string>
+    <string name="login_hide_password">Ocultar</string>
 
     <!-- Comunes -->
     <string name="common_confirm">Confirmar</string>
@@ -96,5 +106,13 @@
     <string name="error_fetch_monthly_sales_failed">No se pudieron obtener las ventas del mes.</string>
     <string name="error_generate_report_failed">No se pudo generar el reporte.</string>
     <string name="error_save_report_failed">No se pudo guardar el reporte.</string>
+    <string name="error_delete_prices_failed">No se pudieron limpiar las consultas de precios.</string>
+    <string name="error_delete_sales_failed">No se pudieron limpiar las ventas antiguas.</string>
+    <string name="error_delete_closings_failed">No se pudieron limpiar los cierres antiguos.</string>
+    <string name="error_empty_password">Ingresá la contraseña.</string>
+    <string name="error_invalid_password">Contraseña incorrecta.</string>
+    <string name="error_login_failed">No se pudo iniciar sesión.</string>
+    <string name="error_logout_failed">No se pudo cerrar la sesión.</string>
+    <string name="error_save_password_failed">No se pudo guardar la contraseña.</string>
     <string name="error_unknown">Ocurrió un error inesperado.</string>
 </resources>

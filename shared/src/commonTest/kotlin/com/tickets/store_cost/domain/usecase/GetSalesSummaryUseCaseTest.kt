@@ -20,6 +20,8 @@ class GetSalesSummaryUseCaseTest {
         override fun getSalesByDateRange(startTime: Long, endTime: Long): Flow<Result<List<Sale>>> {
             return flowOf(Result.Success(sales))
         }
+
+        override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
     }
 
     @Test

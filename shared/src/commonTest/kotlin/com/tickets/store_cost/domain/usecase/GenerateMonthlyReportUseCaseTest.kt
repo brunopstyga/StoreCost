@@ -108,6 +108,8 @@ class GenerateMonthlyReportUseCaseTest {
                 endTime: Long
             ): Flow<Result<List<Sale>>> =
                 flowOf(Result.Error(ErrorCode.FETCH_MONTHLY_SALES_FAILED, "Base de datos no disponible"))
+
+            override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
         }
         val useCase = GenerateMonthlyReportUseCase(repository)
 

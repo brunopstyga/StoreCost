@@ -9,11 +9,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 class FakeSaleRepository(
-    private val sales: List<Sale> = emptyList()
+    sales: List<Sale> = emptyList()
 ) : ISaleRepository {
+
+    private val storedSales = sales.toMutableList()
 
     var lastRegisteredSale: Sale? = null
     var shouldReturnError: Boolean = false
+    var shouldFailDeletion: Boolean = false
+
+    val remainingSales: List<Sale>
+        get() = storedSales.toList()
 
     override suspend fun registerSale(sale: Sale): Result<Unit> {
         if (shouldReturnError) {
@@ -24,6 +30,15 @@ class FakeSaleRepository(
     }
 
     override fun getSalesByDateRange(startTime: Long, endTime: Long): Flow<Result<List<Sale>>> {
-        return flowOf(Result.Success(sales))
+        return flowOf(Result.Success(storedSales.toList()))
+    }
+
+    override suspend fun deleteSalesBefore(limit: Long): Result<Int> {
+        if (shouldFailDeletion) {
+            return Result.Error(ErrorCode.DELETE_SALES_FAILED, "Database error")
+        }
+        val expired = storedSales.filter { it.timestamp < limit }
+        storedSales.removeAll(expired)
+        return Result.Success(expired.size)
     }
 }

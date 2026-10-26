@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import com.tickets.store_cost.presentation.theme.AppStyles
 import com.tickets.store_cost.resources.Res
 import com.tickets.store_cost.resources.app_name
+import com.tickets.store_cost.resources.nav_logout
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -30,7 +31,8 @@ data class NavigationItem(
 fun NavigationDrawerContent(
     items: List<NavigationItem>,
     selectedRoute: String,
-    onItemClick: (String) -> Unit
+    onItemClick: (String) -> Unit,
+    onLogoutClick: () -> Unit = {}
 ) {
     ModalDrawerSheet {
         Spacer(modifier = Modifier.height(AppStyles.Spacing.xl))
@@ -54,5 +56,15 @@ fun NavigationDrawerContent(
                 )
             )
         }
+        Spacer(modifier = Modifier.height(AppStyles.Spacing.lg))
+        NavigationDrawerItem(
+            label = { Text(stringResource(Res.string.nav_logout)) },
+            selected = false,
+            onClick = onLogoutClick,
+            modifier = Modifier.padding(
+                horizontal = AppStyles.Spacing.md,
+                vertical = AppStyles.Spacing.xs
+            )
+        )
     }
 }

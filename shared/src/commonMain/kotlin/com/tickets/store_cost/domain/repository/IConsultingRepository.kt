@@ -12,4 +12,10 @@ interface IConsultingRepository {
     suspend fun insertConsultation(consultation: PriceConsultation): Result<Unit>
 
     fun getAllConsultations(): Flow<Result<List<PriceConsultation>>>
+
+    /**
+     * Elimina las consultas de precios anteriores a [limit] (epoch en
+     * milisegundos) y devuelve la cantidad de registros borrados.
+     */
+    suspend fun deleteConsultationsBefore(limit: Long): Result<Int>
 }
