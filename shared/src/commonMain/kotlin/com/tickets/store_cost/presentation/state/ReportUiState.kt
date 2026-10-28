@@ -1,10 +1,12 @@
 package com.tickets.store_cost.presentation.state
 
+import androidx.compose.runtime.Immutable
 import com.tickets.store_cost.domain.model.ErrorCode
 
 /**
  * Estado del flujo de exportación del reporte mensual.
  */
+@Immutable
 sealed interface ReportUiState {
     data object Idle : ReportUiState
 

@@ -1,7 +1,17 @@
 package com.tickets.store_cost.domain.model
 
+import androidx.compose.runtime.Immutable
 import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * Resultado de una operación de dominio.
+ *
+ * Se marca [Immutable] porque los estados de la UI lo exponen directamente y
+ * nunca se muta después de crearse. No se guarda la excepción original: solo
+ * se conserva su mensaje en [Error.detail] para evitar retener stacktraces
+ * (y referencias) dentro de un `StateFlow`.
+ */
+@Immutable
 sealed class Result<out T> {
     data class Success<out T>(val data: T) : Result<T>()
 
@@ -14,8 +24,7 @@ sealed class Result<out T> {
      */
     data class Error(
         val code: ErrorCode,
-        val detail: String? = null,
-        val exception: Throwable? = null
+        val detail: String? = null
     ) : Result<Nothing>() {
         val message: String
             get() = detail?.takeIf { it.isNotBlank() } ?: code.name
@@ -43,5 +52,5 @@ suspend fun <T> resultOf(
 } catch (e: CancellationException) {
     throw e
 } catch (e: Exception) {
-    Result.Error(code, e.message, e)
+    Result.Error(code, e.message)
 }

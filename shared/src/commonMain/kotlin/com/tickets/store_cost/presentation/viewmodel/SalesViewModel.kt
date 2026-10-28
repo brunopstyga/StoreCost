@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -60,20 +62,25 @@ class SalesViewModel(
 
     private val formState = MutableStateFlow(FormState())
     private val query = MutableStateFlow(initialQuery())
-    private val refreshTick = MutableStateFlow(0)
+    private val todayRange = MutableStateFlow(currentDayRange())
     private val closingState = MutableStateFlow<Result<DailyClosing>?>(null)
     private val pendingClosing = MutableStateFlow<DailyClosing?>(null)
 
-    private val todayRange: Pair<Long, Long> = rangeFor(ClosingPeriod.DAILY)
-
     /**
-     * Resumen del día actual, usado para habilitar el botón de cierre
-     * independientemente de la pestaña seleccionada.
+     * Resumen del día actual, usado para habilitar el botón de cierre.
+     *
+     * Solo se consulta cuando la pestaña activa es Diario: en el resto de las
+     * pestañas el botón de cierre no está visible y la consulta sería trabajo
+     * de base de datos desperdiciado.
      */
     private val todaySummary: StateFlow<Result<SalesSummary>> =
-        refreshTick
-            .flatMapLatest {
-                getSalesSummaryUseCase.observeSalesSummary(todayRange.first, todayRange.second)
+        combine(todayRange, query.map { it.period }) { range, period -> range to period }
+            .flatMapLatest { (range, period) ->
+                if (period == ClosingPeriod.DAILY) {
+                    getSalesSummaryUseCase.observeSalesSummary(range.first, range.second)
+                } else {
+                    flowOf(Result.Success(SalesSummary(0.0, 0, emptyMap())))
+                }
             }
             .stateIn(
                 scope = viewModelScope,
@@ -81,14 +88,17 @@ class SalesViewModel(
                 initialValue = Result.Loading
             )
 
+    /**
+     * El DAO expone un `Flow`, por lo que cada cambio en la tabla re-emite sin
+     * necesidad de refrescar manualmente.
+     */
     private val summaryState: Flow<Result<SalesSummary>> =
-        combine(query, refreshTick) { currentQuery, _ -> currentQuery }
-            .flatMapLatest { currentQuery ->
-                getSalesSummaryUseCase.observeSalesSummary(
-                    currentQuery.startTime,
-                    currentQuery.endTime
-                )
-            }
+        query.flatMapLatest { currentQuery ->
+            getSalesSummaryUseCase.observeSalesSummary(
+                currentQuery.startTime,
+                currentQuery.endTime
+            )
+        }
 
     /**
      * El formulario se combina por separado del resumen: escribir en un campo
@@ -113,9 +123,12 @@ class SalesViewModel(
             baseState,
             todaySummary,
             closingState,
-            pendingClosing
-        ) { base, today, closing, pending ->
+            pendingClosing,
+            todayRange
+        ) { base, today, closing, pending, dayRange ->
             base.copy(
+                todayStart = dayRange.first,
+                todayEnd = dayRange.second,
                 todayTotal = today.getOrNull()?.totalBilled ?: 0.0,
                 todaySalesCount = today.getOrNull()?.totalSalesCount ?: 0,
                 pendingClosing = pending,
@@ -175,9 +188,6 @@ class SalesViewModel(
                 )
             )
             formState.update { it.copy(registerState = result) }
-            if (result is Result.Success) {
-                refreshSales()
-            }
         }
     }
 
@@ -193,8 +203,28 @@ class SalesViewModel(
         query.value = query.value.copy(startTime = startTime, endTime = endTime)
     }
 
-    fun refreshSales() {
-        refreshTick.value += 1
+    /**
+     * Recalcula el rango del día en curso y recarga el cierre guardado.
+     *
+     * Se invoca al entrar a la pantalla para evitar que, pasada la medianoche,
+     * la pestaña Diario siga mostrando el día anterior.
+     */
+    fun refreshToday() {
+        val previous = todayRange.value
+        val current = currentDayRange()
+        if (previous != current) {
+            todayRange.value = current
+            val activeQuery = query.value
+            val wasShowingToday = activeQuery.startTime == previous.first &&
+                activeQuery.endTime == previous.second
+            if (activeQuery.period == ClosingPeriod.DAILY && wasShowingToday) {
+                query.value = activeQuery.copy(
+                    startTime = current.first,
+                    endTime = current.second
+                )
+            }
+        }
+        loadTodayClosing()
     }
 
     /**
@@ -224,9 +254,6 @@ class SalesViewModel(
 
             val result = closeDayUseCase(closing)
             closingState.value = result
-            if (result is Result.Success) {
-                refreshSales()
-            }
         }
     }
 
@@ -237,7 +264,9 @@ class SalesViewModel(
     private fun loadTodayClosing() {
         viewModelScope.launch {
             when (val result = getDailyClosingUseCase()) {
-                is Result.Success -> result.data?.let { closingState.value = Result.Success(it) }
+                // Un día sin cierre no debe conservar el cierre del día anterior.
+                is Result.Success -> closingState.value =
+                    result.data?.let { Result.Success(it) }
                 is Result.Error -> closingState.value = result
                 Result.Loading -> Unit
             }
@@ -248,6 +277,8 @@ class SalesViewModel(
         val (start, end) = rangeFor(ClosingPeriod.DAILY)
         return SalesQuery(period = ClosingPeriod.DAILY, startTime = start, endTime = end)
     }
+
+    private fun currentDayRange(): Pair<Long, Long> = todayIn().toDayRange()
 
     /**
      * Calcula el rango [start, end] en milisegundos para el período seleccionado

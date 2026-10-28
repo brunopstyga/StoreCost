@@ -1,5 +1,6 @@
 package com.tickets.store_cost.presentation.state
 
+import androidx.compose.runtime.Immutable
 import com.tickets.store_cost.domain.model.Result
 
 /**
@@ -8,6 +9,7 @@ import com.tickets.store_cost.domain.model.Result
  * [error] conserva el error de dominio para que la UI lo traduzca a un texto
  * localizado; [errorMessage] queda disponible para logs y pruebas.
  */
+@Immutable
 data class LoginUiState(
     val password: String = "",
     val isLoading: Boolean = false,

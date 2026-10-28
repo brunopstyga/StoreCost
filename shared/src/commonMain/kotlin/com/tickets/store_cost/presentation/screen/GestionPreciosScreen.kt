@@ -76,7 +76,6 @@ fun GestionPreciosScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GestionPreciosContent(
     state: ConsultingUiState,
@@ -91,18 +90,21 @@ private fun GestionPreciosContent(
             .padding(AppStyles.Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
     ) {
+        val decimalKeyboard = remember { KeyboardOptions(keyboardType = KeyboardType.Decimal) }
+        val numberKeyboard = remember { KeyboardOptions(keyboardType = KeyboardType.Number) }
+
         AppOutlinedTextField(
             value = state.basePrice,
             onValueChange = onBasePriceChange,
             label = stringResource(Res.string.prices_base_price_label),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+            keyboardOptions = decimalKeyboard
         )
 
         AppOutlinedTextField(
             value = state.quantity,
             onValueChange = onQuantityChange,
             label = stringResource(Res.string.common_quantity_label),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = numberKeyboard
         )
 
         SectionTitle(text = stringResource(Res.string.prices_select_modality))
@@ -205,11 +207,9 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
         }
 
         is Result.Success -> {
-            val ordered = consultations.data.sortedWith(
-                compareByDescending<PriceConsultation> { it.timestamp }
-                    .thenByDescending { it.id }
-            )
-            if (ordered.isEmpty()) {
+            // El DAO ya entrega las consultas ordenadas por timestamp e id: la
+            // composición no debe volver a ordenar en cada recomposición.
+            if (consultations.data.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -229,7 +229,7 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
                         .padding(AppStyles.Spacing.lg),
                     verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
                 ) {
-                    items(items = ordered, key = { it.id }) { consultation ->
+                    items(items = consultations.data, key = { it.id }) { consultation ->
                         ConsultationRow(consultation = consultation)
                     }
                 }
@@ -240,6 +240,19 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
 
 @Composable
 private fun ConsultationRow(consultation: PriceConsultation) {
+    val subtotal = remember(consultation.id, consultation.calculatedSubtotal) {
+        formatCurrency(consultation.calculatedSubtotal)
+    }
+    val unitPrice = remember(consultation.id, consultation.calculatedUnitPrice) {
+        formatCurrency(consultation.calculatedUnitPrice)
+    }
+    val basePrice = remember(consultation.id, consultation.basePrice) {
+        formatCurrency(consultation.basePrice)
+    }
+    val timestamp = remember(consultation.id, consultation.timestamp) {
+        formatTimestamp(consultation.timestamp)
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.hairline)
@@ -257,7 +270,7 @@ private fun ConsultationRow(consultation: PriceConsultation) {
                 style = AppStyles.Typography.itemTitle
             )
             Text(
-                text = formatCurrency(consultation.calculatedSubtotal),
+                text = subtotal,
                 style = AppStyles.Typography.itemTitle
             )
         }
@@ -265,14 +278,14 @@ private fun ConsultationRow(consultation: PriceConsultation) {
             text = stringResource(
                 Res.string.prices_consultation_detail,
                 consultation.quantity,
-                formatCurrency(consultation.calculatedUnitPrice),
-                formatCurrency(consultation.basePrice)
+                unitPrice,
+                basePrice
             ),
             style = AppStyles.Typography.caption,
             color = AppStyles.Colors.secondaryText
         )
         Text(
-            text = formatTimestamp(consultation.timestamp),
+            text = timestamp,
             style = AppStyles.Typography.caption,
             color = AppStyles.Colors.secondaryText
         )

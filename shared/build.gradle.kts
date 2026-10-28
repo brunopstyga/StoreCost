@@ -73,6 +73,21 @@ compose.resources {
     packageOfResClass = "com.tickets.store_cost.resources"
 }
 
+/**
+ * Configuración del compilador de Compose:
+ * - `strongSkipping`: permite omitir recomposiciones aunque los parámetros
+ *   sean inestables, comparándolos por igualdad.
+ * - `stabilityConfigurationFile`: declara estables las colecciones de Kotlin.
+ * - reports/metrics: permiten auditar qué composables quedan inestables o
+ *   no omitibles (`shared/build/compose-reports`).
+ */
+composeCompiler {
+    enableStrongSkippingMode = true
+    stabilityConfigurationFile.set(rootProject.layout.projectDirectory.file("compose-stability.conf"))
+    reportsDestination.set(layout.buildDirectory.dir("compose-reports"))
+    metricsDestination.set(layout.buildDirectory.dir("compose-metrics"))
+}
+
 dependencies {
     add("kspAndroid", libs.room.compiler)
     add("kspIosX64", libs.room.compiler)

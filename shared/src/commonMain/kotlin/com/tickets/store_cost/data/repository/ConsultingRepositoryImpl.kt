@@ -37,7 +37,7 @@ class ConsultingRepositoryImpl(
             .catch { e ->
                 // La cancelación debe propagarse: no es un error de negocio.
                 if (e is CancellationException) throw e
-                emit(Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, e.message, e))
+                emit(Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, e.message))
             }
 
     override suspend fun deleteConsultationsBefore(limit: Long): Result<Int> =

@@ -1,5 +1,6 @@
 package com.tickets.store_cost.presentation.state
 
+import androidx.compose.runtime.Immutable
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
@@ -9,6 +10,7 @@ import com.tickets.store_cost.domain.model.Result
  * Encapsula los valores del formulario, el historial de consultas calculadas
  * y los estados [Result] de la carga del historial y del guardado.
  */
+@Immutable
 data class ConsultingUiState(
     val basePrice: String = "1000.0",
     val quantity: String = "1",

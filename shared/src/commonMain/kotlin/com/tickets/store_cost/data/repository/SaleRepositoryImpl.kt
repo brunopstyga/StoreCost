@@ -10,7 +10,7 @@ import com.tickets.store_cost.data.local.dao.SaleDao
 import com.tickets.store_cost.data.local.entity.SaleEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Single
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -36,14 +36,15 @@ class SaleRepositoryImpl(
         }
 
     override fun getSalesByDateRange(startTime: Long, endTime: Long): Flow<Result<List<Sale>>> =
-        flow<Result<List<Sale>>> {
-            val sales = saleDao.getSalesByDateRange(startTime, endTime).map { it.toDomain() }
-            emit(Result.Success(sales))
-        }.catch { e ->
-            // La cancelación debe propagarse: no es un error de negocio.
-            if (e is CancellationException) throw e
-            emit(Result.Error(ErrorCode.FETCH_SALES_FAILED, e.message, e))
-        }
+        saleDao.observeSalesByDateRange(startTime, endTime)
+            .map<List<SaleEntity>, Result<List<Sale>>> { entities ->
+                Result.Success(entities.map { it.toDomain() })
+            }
+            .catch { e ->
+                // La cancelación debe propagarse: no es un error de negocio.
+                if (e is CancellationException) throw e
+                emit(Result.Error(ErrorCode.FETCH_SALES_FAILED, e.message))
+            }
 
     override suspend fun deleteSalesBefore(limit: Long): Result<Int> =
         resultOf(ErrorCode.DELETE_SALES_FAILED) {

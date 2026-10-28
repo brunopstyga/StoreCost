@@ -933,3 +933,67 @@ Configurar e implementar tareas periódicas en segundo plano utilizando WorkMana
 - [ ] Validar que los datos de **Gestión de Precios** se limpien al día sin afectar el historial de **Ventas y Cierre**.
 - [ ] Verificar que el reporte quincenal incluya todo el historial completo de ventas antes de que se ejecute la limpieza de los 15 días.
 - [ ] Confirmar la recepción de notificaciones y la retención correcta en la base de datos Room.
+
+# Tarea 08 - Implementación de Ofuscación y Hardening de Seguridad (R8 y ProGuard)
+
+## Objetivo
+Activar y configurar la ofuscación de código y la compresión de recursos mediante **R8** en el módulo `androidApp` para proteger la lógica de negocio, minimizar el tamaño del APK y dificultar la ingeniería inversa (descompilación de constantes de texto plano y nombres de clases/repositorios).
+
+---
+
+## Arquitectura y Distribución de Responsabilidades
+- **Módulo `shared`**: Mantiene la lógica de negocio y los modelos limpios, cuyas estructuras deben preservarse para evitar fallos por reflexión.
+- **Módulo `androidApp` (Nativo)**: Configura las reglas de compilación `release`, habilita R8 en `build.gradle.kts` e incorpora el archivo de exclusiones `proguard-rules.pro` para proteger librerías críticas de persistencia e inyección de dependencias.
+
+---
+
+## Pasos a Ejecutar
+
+### 1. Configuración del Módulo Android (`androidApp`)
+- [ ] **Habilitar R8 en Builds de Release**:
+  - Modificar el archivo `androidApp/build.gradle.kts` dentro del bloque `buildTypes` para la variante `release`:
+    ```kotlin
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    ```
+
+### 2. Definición de Reglas de Ofuscación (`proguard-rules.pro`)
+- [ ] **Crear o editar `androidApp/proguard-rules.pro`**:
+  - Agregar las exclusiones necesarias para evitar que la ofuscación rompa frameworks externos basados en reflexión:
+    ```pro
+    # --- Koin (Inyección de dependencias por anotaciones) ---
+    -keep class com.tickets.store_cost.** { *; }
+    -dontwarn org.koin.**
+
+    # --- Room (Base de datos local y DAOs) ---
+    -keep class com.tickets.store_cost.data.local.** { *; }
+    -keepattributes *Annotation*,Signature,EnclosingMethod
+
+    # --- Modelos de Dominio y Datos ---
+    -keep class com.tickets.store_cost.domain.model.** { *; }
+    -keep class com.tickets.store_cost.data.model.** { *; }
+
+    # --- Seguridad / Criptografía (SHA-256 / Java Security) ---
+    -dontwarn java.security.**
+    -keepclassmembers class * {
+        @javax.inject.Inject <init>();
+    }
+    ```
+
+### 3. Verificación y Compilación
+- [ ] **Ejecución y Pruebas en Modo Release**:
+  - Compilar el proyecto ejecutando el comando de Gradle:
+    ```bash
+    ./gradlew assembleRelease
+    ```
+  - Validar que la compilación finalice con éxito (`BUILD SUCCESSFUL`).
+  - Instalar el APK de release resultante en un dispositivo físico para confirmar que 
+  el login, el almacenamiento y las consultas locales operan correctamente sin errores de ejecución.

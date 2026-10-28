@@ -29,7 +29,7 @@ class AndroidReportFileWriter(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Result.Error(ErrorCode.SAVE_REPORT_FAILED, e.message, e)
+                Result.Error(ErrorCode.SAVE_REPORT_FAILED, e.message)
             }
         }
 

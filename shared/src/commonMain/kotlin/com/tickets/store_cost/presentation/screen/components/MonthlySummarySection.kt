@@ -10,16 +10,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.SalesSummary
 import com.tickets.store_cost.domain.model.getOrNull
 import com.tickets.store_cost.presentation.state.ReportUiState
 import com.tickets.store_cost.presentation.theme.AppStyles
+import com.tickets.store_cost.presentation.util.displayName
 import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
 import com.tickets.store_cost.presentation.util.formatMonthYear
-import com.tickets.store_cost.presentation.util.operationTypeDisplayName
 import com.tickets.store_cost.resources.Res
 import com.tickets.store_cost.resources.common_operations
 import com.tickets.store_cost.resources.monthly_average_ticket
@@ -51,6 +52,19 @@ fun MonthlySummarySection(
     val totalBilled = salesSummary?.totalBilled ?: 0.0
     val salesCount = salesSummary?.totalSalesCount ?: 0
     val breakdown = salesSummary?.breakdown ?: emptyMap()
+
+    val sortedBreakdown = remember(breakdown) {
+        breakdown.entries.sortedByDescending { it.value }
+    }
+    val averageTicket = remember(totalBilled, salesCount) {
+        if (salesCount > 0) formatCurrency(totalBilled / salesCount) else formatCurrency(0.0)
+    }
+    val totalBilledText = remember(totalBilled) { formatCurrency(totalBilled) }
+    val exportPeriod = remember(startTime) {
+        val month = Instant.fromEpochMilliseconds(startTime)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+        month.year to month.monthNumber
+    }
 
     Column(
         modifier = modifier
@@ -87,7 +101,7 @@ fun MonthlySummarySection(
                         color = AppStyles.Colors.secondaryText
                     )
                     Text(
-                        text = formatCurrency(totalBilled),
+                        text = totalBilledText,
                         style = AppStyles.Typography.metric
                     )
                     Row(
@@ -100,19 +114,39 @@ fun MonthlySummarySection(
                         )
                         SummaryValue(
                             label = stringResource(Res.string.monthly_average_ticket),
-                            value = formatCurrency(totalBilled / salesCount)
+                            value = averageTicket
                         )
+                    }
+                }
+
+                if (sortedBreakdown.isNotEmpty()) {
+                    SectionTitle(text = stringResource(Res.string.monthly_by_modality))
+                    AppCard(verticalSpacing = AppStyles.Spacing.sm) {
+                        sortedBreakdown.forEach { (operationType, amount) ->
+                            val formattedAmount = remember(operationType, amount) {
+                                formatCurrency(amount)
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = operationType.displayName(),
+                                    style = AppStyles.Typography.body
+                                )
+                                Text(
+                                    text = formattedAmount,
+                                    style = AppStyles.Typography.itemTitle
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
         Button(
-            onClick = {
-                val month = Instant.fromEpochMilliseconds(startTime)
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                onExportMonthlyReport(month.year, month.monthNumber)
-            },
+            onClick = { onExportMonthlyReport(exportPeriod.first, exportPeriod.second) },
             enabled = reportState !is ReportUiState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {

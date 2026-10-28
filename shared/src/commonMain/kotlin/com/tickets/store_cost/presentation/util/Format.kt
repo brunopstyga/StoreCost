@@ -28,12 +28,17 @@ fun formatTimestamp(timestamp: Long): String = formatDateTime(timestamp)
 
 /**
  * Formatea un rango [start, end] como "dd/MM/yyyy - dd/MM/yyyy".
+ * Si el rango abarca un solo día devuelve una única fecha.
  */
 fun formatDateRange(startTime: Long, endTime: Long): String {
     val timeZone = TimeZone.currentSystemDefault()
     val start = Instant.fromEpochMilliseconds(startTime).toLocalDateTime(timeZone).date
     val end = Instant.fromEpochMilliseconds(endTime).toLocalDateTime(timeZone).date
-    return "${formatDate(start)} - ${formatDate(end)}"
+    return if (start == end) {
+        formatDate(start)
+    } else {
+        "${formatDate(start)} - ${formatDate(end)}"
+    }
 }
 
 /**

@@ -41,8 +41,19 @@ class ConsultingViewModel(
 
     private val formState = MutableStateFlow(FormState())
 
+    /**
+     * Historial como `StateFlow` propio: se comparte entre recomposiciones y
+     * no se vuelve a suscribir cuando cambia el formulario.
+     */
+    private val history: StateFlow<Result<List<PriceConsultation>>> =
+        getPriceConsultationsUseCase().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = Result.Loading
+        )
+
     val uiState: StateFlow<ConsultingUiState> =
-        combine(formState, getPriceConsultationsUseCase()) { form, consultations ->
+        combine(formState, history) { form, consultations ->
             ConsultingUiState(
                 basePrice = form.basePrice,
                 quantity = form.quantity,

@@ -1,5 +1,8 @@
 package com.tickets.store_cost.presentation.util
 
+import com.tickets.store_cost.core.util.formatDate
+import com.tickets.store_cost.domain.util.todayIn
+import com.tickets.store_cost.domain.util.toDayRange
 import kotlinx.datetime.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,5 +30,12 @@ class FormatTest {
     fun testFormatMonthYear() {
         val timestamp = Instant.parse("2026-10-15T12:00:00Z").toEpochMilliseconds()
         assertEquals("Octubre 2026", formatMonthYear(timestamp, "Octubre"))
+    }
+
+    @Test
+    fun testFormatDateRangeForASingleDayCollapsesToDate() {
+        val (start, end) = todayIn().toDayRange()
+
+        assertEquals(formatDate(todayIn()), formatDateRange(start, end))
     }
 }

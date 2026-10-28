@@ -8,7 +8,6 @@ import com.tickets.store_cost.domain.repository.ISaleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import org.koin.core.annotation.Factory
 
 @Factory
@@ -44,7 +43,7 @@ class GetSalesSummaryUseCase(
 
     private suspend fun getSummary(startTime: Long, endTime: Long): Result<SalesSummary> {
         val salesResult: Result<List<Sale>> =
-            repository.getSalesByDateRange(startTime, endTime).toList().first()
+            repository.getSalesByDateRange(startTime, endTime).first()
 
         return when (salesResult) {
             is Result.Success -> Result.Success(buildSummary(salesResult.data))

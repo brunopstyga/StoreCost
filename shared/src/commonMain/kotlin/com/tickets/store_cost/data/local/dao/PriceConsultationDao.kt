@@ -13,7 +13,7 @@ interface PriceConsultationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertConsultation(consultation: PriceConsultationEntity)
 
-    @Query("SELECT * FROM price_consultations ORDER BY timestamp DESC")
+    @Query("SELECT * FROM price_consultations ORDER BY timestamp DESC, id DESC")
     fun getAllConsultations(): Flow<List<PriceConsultationEntity>>
 
     /**

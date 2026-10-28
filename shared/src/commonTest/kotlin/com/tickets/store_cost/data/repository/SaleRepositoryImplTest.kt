@@ -7,8 +7,10 @@ import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.model.Sale
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -28,13 +30,13 @@ class SaleRepositoryImplTest {
 
         override suspend fun insertSale(sale: SaleEntity) = Unit
 
-        override suspend fun getSalesByDateRange(
+        override fun observeSalesByDateRange(
             startTime: Long,
             endTime: Long
-        ): List<SaleEntity> {
+        ): Flow<List<SaleEntity>> = flow {
             gate?.await()
             failure?.let { throw it }
-            return sales
+            emit(sales)
         }
 
         override suspend fun deleteSalesBefore(limit: Long): Int = 0

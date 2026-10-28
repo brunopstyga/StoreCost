@@ -2,6 +2,7 @@ package com.tickets.store_cost.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,9 +23,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tickets.store_cost.domain.model.Result
+import com.tickets.store_cost.domain.model.SalesSummary
 import com.tickets.store_cost.domain.util.toDayRange
 import com.tickets.store_cost.presentation.screen.components.AppCard
 import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
@@ -40,6 +44,7 @@ import com.tickets.store_cost.presentation.state.SalesUiState
 import com.tickets.store_cost.presentation.theme.AppStyles
 import com.tickets.store_cost.presentation.util.displayMessage
 import com.tickets.store_cost.presentation.util.formatCurrency
+import com.tickets.store_cost.presentation.util.formatDateRange
 import com.tickets.store_cost.presentation.util.formatTimestamp
 import com.tickets.store_cost.presentation.viewmodel.ReportViewModel
 import com.tickets.store_cost.presentation.viewmodel.SalesViewModel
@@ -53,12 +58,14 @@ import com.tickets.store_cost.resources.period_daily
 import com.tickets.store_cost.resources.period_history
 import com.tickets.store_cost.resources.period_monthly
 import com.tickets.store_cost.resources.sales_amount_label
+import com.tickets.store_cost.resources.sales_change_date
 import com.tickets.store_cost.resources.sales_closing_button
 import com.tickets.store_cost.resources.sales_closing_saved
 import com.tickets.store_cost.resources.sales_closing_saving
 import com.tickets.store_cost.resources.sales_closing_total
 import com.tickets.store_cost.resources.sales_closing_total_today
 import com.tickets.store_cost.resources.sales_confirm_closing_title
+import com.tickets.store_cost.resources.sales_period
 import com.tickets.store_cost.resources.sales_register_button
 import com.tickets.store_cost.resources.sales_register_title
 import com.tickets.store_cost.resources.sales_registered_success
@@ -86,21 +93,13 @@ fun VentasScreen(
     reportViewModel: ReportViewModel = koinViewModel()
 ) {
     val state by viewModel.salesUiState.collectAsStateWithLifecycle()
-    val reportState by reportViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.refreshSales()
-    }
-
-    LaunchedEffect(reportState) {
-        val success = reportState as? ReportUiState.ExportSuccess ?: return@LaunchedEffect
-        onSendReport(success.filePath)
-        reportViewModel.onReportHandled()
+        viewModel.refreshToday()
     }
 
     VentasContent(
         state = state,
-        reportState = reportState,
         onAmountChange = viewModel::onAmountChange,
         onQuantityChange = viewModel::onQuantityChange,
         onRegisterSale = viewModel::onRegisterSale,
@@ -109,7 +108,44 @@ fun VentasScreen(
         onRequestCloseDay = viewModel::onRequestCloseDay,
         onConfirmCloseDay = viewModel::onConfirmCloseDay,
         onDismissClosingDialog = viewModel::onDismissClosingDialog,
-        onExportMonthlyReport = reportViewModel::onExportMonthlyReport
+        monthlySummary = { modifier ->
+            MonthlySummaryRoute(
+                startTime = state.startTime,
+                summary = state.summary,
+                reportViewModel = reportViewModel,
+                onSendReport = onSendReport,
+                modifier = modifier
+            )
+        }
+    )
+}
+
+/**
+ * Aísla la recolección de [ReportViewModel] a la pestaña Mensual: un cambio en
+ * el estado de exportación no debe recomponer Diario ni Historial.
+ */
+@Composable
+private fun MonthlySummaryRoute(
+    startTime: Long,
+    summary: Result<SalesSummary>,
+    reportViewModel: ReportViewModel,
+    onSendReport: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val reportState by reportViewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(reportState) {
+        val success = reportState as? ReportUiState.ExportSuccess ?: return@LaunchedEffect
+        onSendReport(success.filePath)
+        reportViewModel.onReportHandled()
+    }
+
+    MonthlySummarySection(
+        startTime = startTime,
+        summary = summary,
+        reportState = reportState,
+        onExportMonthlyReport = reportViewModel::onExportMonthlyReport,
+        modifier = modifier
     )
 }
 
@@ -117,7 +153,6 @@ fun VentasScreen(
 @Composable
 private fun VentasContent(
     state: SalesUiState,
-    reportState: ReportUiState,
     onAmountChange: (String) -> Unit,
     onQuantityChange: (String) -> Unit,
     onRegisterSale: () -> Unit,
@@ -126,7 +161,7 @@ private fun VentasContent(
     onRequestCloseDay: () -> Unit,
     onConfirmCloseDay: () -> Unit,
     onDismissClosingDialog: () -> Unit,
-    onExportMonthlyReport: (Int, Int) -> Unit
+    monthlySummary: @Composable (Modifier) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -158,18 +193,14 @@ private fun VentasContent(
 
             ClosingPeriod.HISTORY -> TransactionHistorySection(
                 sales = state.sales,
+                todayStart = state.todayStart,
+                todayEnd = state.todayEnd,
                 isLoading = state.isLoading,
                 error = state.historyError,
                 modifier = Modifier.weight(1f)
             )
 
-            ClosingPeriod.MONTHLY -> MonthlySummarySection(
-                startTime = state.startTime,
-                summary = state.summary,
-                reportState = reportState,
-                onExportMonthlyReport = onExportMonthlyReport,
-                modifier = Modifier.weight(1f)
-            )
+            ClosingPeriod.MONTHLY -> monthlySummary(Modifier.weight(1f))
         }
     }
 
@@ -230,8 +261,29 @@ private fun DailySalesContent(
     onChangeDate: () -> Unit,
     onRequestCloseDay: () -> Unit
 ) {
+    val period = remember(state.startTime, state.endTime) {
+        formatDateRange(state.startTime, state.endTime)
+    }
+    val decimalKeyboard = remember { KeyboardOptions(keyboardType = KeyboardType.Decimal) }
+    val numberKeyboard = remember { KeyboardOptions(keyboardType = KeyboardType.Number) }
+
     if (state.isLoading) {
         LoadingBar()
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(Res.string.sales_period, period),
+            style = AppStyles.Typography.caption,
+            color = AppStyles.Colors.secondaryText
+        )
+        TextButton(onClick = onChangeDate) {
+            Text(text = stringResource(Res.string.sales_change_date))
+        }
     }
 
     state.historyError?.let { error ->
@@ -244,14 +296,14 @@ private fun DailySalesContent(
         value = state.amount,
         onValueChange = onAmountChange,
         label = stringResource(Res.string.sales_amount_label),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+        keyboardOptions = decimalKeyboard
     )
 
     AppOutlinedTextField(
         value = state.quantity,
         onValueChange = onQuantityChange,
         label = stringResource(Res.string.common_quantity_label),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        keyboardOptions = numberKeyboard
     )
 
     Button(
@@ -317,12 +369,14 @@ private fun SalesDatePicker(
     onDismiss: () -> Unit,
     onDateSelected: (Long, Long) -> Unit
 ) {
-    val timeZone = TimeZone.currentSystemDefault()
-    val todayUtcMillis = Clock.System.now()
-        .toLocalDateTime(timeZone)
-        .date
-        .atStartOfDayIn(TimeZone.UTC)
-        .toEpochMilliseconds()
+    val timeZone = remember { TimeZone.currentSystemDefault() }
+    val todayUtcMillis = remember {
+        Clock.System.now()
+            .toLocalDateTime(timeZone)
+            .date
+            .atStartOfDayIn(TimeZone.UTC)
+            .toEpochMilliseconds()
+    }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = todayUtcMillis)
 
     DatePickerDialog(

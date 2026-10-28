@@ -1,5 +1,6 @@
 package com.tickets.store_cost.presentation.state
 
+import androidx.compose.runtime.Immutable
 import com.tickets.store_cost.domain.model.DailyClosing
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
@@ -23,7 +24,11 @@ enum class ClosingPeriod {
  * Estado inmutable de la pantalla "Ventas y Cierre".
  * Encapsula el formulario de registro directo, el período consultado,
  * el historial de transacciones y el cierre diario.
+ *
+ * [todayStart]/[todayEnd] los calcula el ViewModel para que la UI no lea el
+ * reloj ni la zona horaria durante la composición.
  */
+@Immutable
 data class SalesUiState(
     val period: ClosingPeriod = ClosingPeriod.DAILY,
     val startTime: Long = 0L,
@@ -32,6 +37,8 @@ data class SalesUiState(
     val quantity: String = "1",
     val registerState: Result<Unit>? = null,
     val summary: Result<SalesSummary> = Result.Loading,
+    val todayStart: Long = 0L,
+    val todayEnd: Long = 0L,
     val todayTotal: Double = 0.0,
     val todaySalesCount: Int = 0,
     val pendingClosing: DailyClosing? = null,

@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -55,6 +56,20 @@ fun LoginScreen(
     onTogglePasswordVisibility: () -> Unit,
     onLogin: () -> Unit
 ) {
+    val visualTransformation = remember(state.isPasswordVisible) {
+        if (state.isPasswordVisible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        }
+    }
+    val passwordKeyboard = remember {
+        KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -87,15 +102,8 @@ fun LoginScreen(
                 onValueChange = onPasswordChanged,
                 label = stringResource(Res.string.login_password_label),
                 enabled = !state.isLoading,
-                visualTransformation = if (state.isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                ),
+                visualTransformation = visualTransformation,
+                keyboardOptions = passwordKeyboard,
                 keyboardActions = KeyboardActions(onDone = { onLogin() }),
                 trailingIcon = {
                     TextButton(
