@@ -1,5 +1,6 @@
 package com.tickets.store_cost.data.repository
 
+import com.tickets.store_cost.core.logging.AppLogger
 import com.tickets.store_cost.data.local.dao.PriceConsultationDao
 import com.tickets.store_cost.data.local.entity.PriceConsultationEntity
 import com.tickets.store_cost.data.mapper.toDomain
@@ -37,6 +38,7 @@ class ConsultingRepositoryImpl(
             .catch { e ->
                 // La cancelación debe propagarse: no es un error de negocio.
                 if (e is CancellationException) throw e
+                AppLogger.e("No se pudo observar el historial de consultas", e)
                 emit(Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, e.message))
             }
 

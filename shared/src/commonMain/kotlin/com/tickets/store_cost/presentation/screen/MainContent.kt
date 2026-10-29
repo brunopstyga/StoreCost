@@ -55,6 +55,7 @@ private val menuItems = listOf(
 @Composable
 fun MainContent(
     onSendReport: (String) -> Unit = {},
+    onShareLogs: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val navController = rememberNavController()
@@ -83,6 +84,10 @@ fun MainContent(
                         restoreState = true
                     }
                     scope.launch { drawerState.close() }
+                },
+                onShareLogsClick = {
+                    scope.launch { drawerState.close() }
+                    onShareLogs()
                 },
                 onLogoutClick = {
                     scope.launch { drawerState.close() }

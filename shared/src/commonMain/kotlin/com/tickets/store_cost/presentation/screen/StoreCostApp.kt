@@ -13,6 +13,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun StoreCostApp(
     onSendReport: (String) -> Unit = {},
+    onShareLogs: () -> Unit = {},
     loginViewModel: LoginViewModel = koinViewModel()
 ) {
     val loginState by loginViewModel.uiState.collectAsStateWithLifecycle()
@@ -20,6 +21,7 @@ fun StoreCostApp(
     if (loginState.isAuthenticated) {
         MainContent(
             onSendReport = onSendReport,
+            onShareLogs = onShareLogs,
             onLogout = loginViewModel::onLogoutClicked
         )
     } else {

@@ -1,5 +1,6 @@
 package com.tickets.store_cost.data.repository
 
+import com.tickets.store_cost.core.logging.AppLogger
 import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.Result
@@ -43,6 +44,7 @@ class SaleRepositoryImpl(
             .catch { e ->
                 // La cancelación debe propagarse: no es un error de negocio.
                 if (e is CancellationException) throw e
+                AppLogger.e("No se pudo observar el historial de ventas", e)
                 emit(Result.Error(ErrorCode.FETCH_SALES_FAILED, e.message))
             }
 

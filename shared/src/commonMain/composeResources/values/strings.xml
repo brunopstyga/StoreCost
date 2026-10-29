@@ -6,6 +6,7 @@
     <string name="nav_sales">Ventas Diarias y Cierre</string>
     <string name="nav_open_menu">Abrir menú</string>
     <string name="nav_logout">Cerrar Sesión</string>
+    <string name="nav_share_logs">Enviar registros de diagnóstico</string>
 
     <!-- Login -->
     <string name="login_title">Piel de luna</string>

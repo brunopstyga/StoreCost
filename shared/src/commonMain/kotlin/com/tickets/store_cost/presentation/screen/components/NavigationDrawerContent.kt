@@ -12,6 +12,7 @@ import com.tickets.store_cost.presentation.theme.AppStyles
 import com.tickets.store_cost.resources.Res
 import com.tickets.store_cost.resources.app_name
 import com.tickets.store_cost.resources.nav_logout
+import com.tickets.store_cost.resources.nav_share_logs
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -32,6 +33,7 @@ fun NavigationDrawerContent(
     items: List<NavigationItem>,
     selectedRoute: String,
     onItemClick: (String) -> Unit,
+    onShareLogsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {}
 ) {
     ModalDrawerSheet {
@@ -57,6 +59,15 @@ fun NavigationDrawerContent(
             )
         }
         Spacer(modifier = Modifier.height(AppStyles.Spacing.lg))
+        NavigationDrawerItem(
+            label = { Text(stringResource(Res.string.nav_share_logs)) },
+            selected = false,
+            onClick = onShareLogsClick,
+            modifier = Modifier.padding(
+                horizontal = AppStyles.Spacing.md,
+                vertical = AppStyles.Spacing.xs
+            )
+        )
         NavigationDrawerItem(
             label = { Text(stringResource(Res.string.nav_logout)) },
             selected = false,

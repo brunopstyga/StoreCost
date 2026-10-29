@@ -997,3 +997,35 @@ Activar y configurar la ofuscación de código y la compresión de recursos medi
   - Validar que la compilación finalice con éxito (`BUILD SUCCESSFUL`).
   - Instalar el APK de release resultante en un dispositivo físico para confirmar que 
   el login, el almacenamiento y las consultas locales operan correctamente sin errores de ejecución.
+  
+ # Tarea 09: Sistema Integral de Registro de Logs (`AppLogger`), Persistencia Local, Exportación de Diagnóstico y Captura Preventiva de Errores
+
+- **Objetivo**: Implementar un sistema centralizado de logging local persistente en archivo de texto plano (`.txt`) con limpieza automática semanal, inicialización en el arranque de la aplicación, configuración de seguridad mediante `FileProvider` para compartir reportes, captura preventiva de excepciones técnicas antes de la conversión a estados de resultado (`Result`), y su integración accesible en el menú desplegable de la interfaz de usuario.
+
+- **Pasos a ejecutar**:
+  1. **Creación de la Clase Utilitaria `AppLogger` con Limpieza Semanal**:
+     - Desarrollar el objeto `AppLogger` (en la capa de presentación/utilidades) que reciba el contexto al iniciar, habilitando un archivo interno `app_logs.txt` para acumular registros con marcas de tiempo.
+     - **Políticas de tamaño y tiempo**: Limitar su tamaño máximo a 1MB e implementar una lógica de validación temporal (por ejemplo, verificando la última modificación o almacenando el timestamp de creación) para **vaciar o recrear el archivo automáticamente cada una semana**, evitando así un consumo excesivo de almacenamiento.
+     - Escribir de forma simultánea en la consola nativa (`Logcat`) y en el archivo local de texto.
+  2. **Inicialización del Logger en el Arranque**:
+     - Configurar la inicialización de `AppLogger.init(applicationContext)` en el método de arranque de la aplicación (en `StoreCostApplication` o `MainActivity`).
+  3. **Creación de la Función para Compartir Logs**:
+     - Implementar la función `shareLogFile(context)` que valide la existencia del archivo de registros, genere la URI segura con `FileProvider` y lance el selector nativo de Android (*Share Sheet*) con tipo de contenido de texto plano.
+	 - Reutilización (DRY): Diseñarlo de forma genérica para que tanto la exportación de reportes de la Tarea 07 como la compartición de logs de esta Tarea 09 utilicen exactamente la misma función.
+  4. **Configuración de Seguridad del `FileProvider`**:
+     - Declarar el proveedor de archivos en el `AndroidManifest.xml` con su respectiva autoridad y crear el archivo de configuración de rutas `res/xml/file_paths.xml` apuntando al almacenamiento interno de la app.
+  5. **Captura y Registro Preventivo de Excepciones (`Result`)**:
+     - Asegurar que antes de transformar cualquier excepción en un objeto `Result.Error` (dentro de ViewModels, repositorios o bloques de manejo de errores), se invoque a `AppLogger.e(message, throwable)` para preservar el *stacktrace* técnico completo en los registros locales sin saturar los flujos de estado inmutables de la UI.
+  6. **Integración en la Interfaz de Usuario (Menú Desplegable)**:
+     - Añadir un nuevo elemento textual en el menú desplegable de la pantalla para disparar de inmediato la función de envío de registros utilizando el contexto actual de la interfaz.
+
+- **Criterio de Aceptación**: `AppLogger` funcional con soporte dual (Logcat + archivo), purga automática del archivo cada 7 días para liberar espacio, límite de 1MB, compartición nativa operativa mediante `FileProvider`, *stacktraces* preservados ante fallos de dominio sin afectar la ligereza de los estados `Result`, y opción accesible desde el menú de la app.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**: Al terminar esta tarea, el agente DEBE mostrar obligatoriamente el siguiente checklist completado con `[x]` y detallar los archivos creados/modificados:
+  - [ ] Clase utilitaria `AppLogger` creada con soporte dual, control de tamaño (1MB) y política de limpieza automática semanal.
+  - [ ] Inicialización del logger configurada en el arranque de la aplicación (`StoreCostApplication` / `MainActivity`).
+  - [ ] Función de compartición de archivos (`shareLogFile`) implementada con `Intent.ACTION_SEND`.
+  - [ ] Proveedor de archivos (`FileProvider`) configurado en `AndroidManifest.xml` y recurso `file_paths.xml` creado.
+  - [ ] Captura preventiva de excepciones técnicas con `AppLogger.e` aplicada previamente a la emisión de `Result.Error`.
+  - [ ] Opción de menú desplegable integrada en la UI para exportar y enviar los registros.
+  - *Archivos Creados/Modificados*: (Detallar la lista de clases, manifiestos, recursos XML y componentes UI creados o modificados).

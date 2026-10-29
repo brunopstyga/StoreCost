@@ -2,6 +2,7 @@ package com.tickets.store_cost.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tickets.store_cost.core.logging.AppLogger
 import com.tickets.store_cost.domain.model.ErrorCode
 import com.tickets.store_cost.domain.model.MonthlyReport
 import com.tickets.store_cost.domain.model.Result
@@ -34,7 +35,13 @@ class ReportViewModel(
         viewModelScope.launch {
             _uiState.value = when (val reportResult = generateMonthlyReportUseCase(year, month)) {
                 is Result.Success -> writeReport(reportResult.data)
-                is Result.Error -> ReportUiState.Error(reportResult.code, reportResult.detail)
+                is Result.Error -> {
+                    AppLogger.e(
+                        "No se pudo generar el reporte $year-$month (${reportResult.code.name}): " +
+                            reportResult.message
+                    )
+                    ReportUiState.Error(reportResult.code, reportResult.detail)
+                }
                 Result.Loading -> ReportUiState.Error(ErrorCode.GENERATE_REPORT_FAILED)
             }
         }
@@ -56,7 +63,12 @@ class ReportViewModel(
                 filePath = writeResult.data
             )
 
-            is Result.Error -> ReportUiState.Error(writeResult.code, writeResult.detail)
+            is Result.Error -> {
+                AppLogger.e(
+                    "No se pudo guardar el reporte (${writeResult.code.name}): ${writeResult.message}"
+                )
+                ReportUiState.Error(writeResult.code, writeResult.detail)
+            }
             Result.Loading -> ReportUiState.Error(ErrorCode.SAVE_REPORT_FAILED)
         }
 }

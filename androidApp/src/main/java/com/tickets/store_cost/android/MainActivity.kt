@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import com.tickets.store_cost.android.logs.LogShareLauncher
 import com.tickets.store_cost.android.report.EmailReportLauncher
 import com.tickets.store_cost.presentation.screen.StoreCostApp
 import com.tickets.store_cost.presentation.theme.AppTheme
@@ -35,6 +36,9 @@ class MainActivity : ComponentActivity() {
                 StoreCostApp(
                     onSendReport = { filePath ->
                         EmailReportLauncher.launch(this, filePath)
+                    },
+                    onShareLogs = {
+                        LogShareLauncher.shareLogFile(this)
                     }
                 )
             }

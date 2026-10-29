@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
+import com.tickets.store_cost.core.logging.AppLogger
 import com.tickets.store_cost.domain.model.Result as DomainResult
 import com.tickets.store_cost.domain.usecase.CleanDailyPricesUseCase
 import org.koin.core.component.KoinComponent
@@ -20,11 +21,14 @@ class DailyPriceCleanupWorker(
 
     private val cleanDailyPrices: CleanDailyPricesUseCase by inject()
 
-    override suspend fun doWork(): ListenableWorker.Result =
-        when (cleanDailyPrices()) {
-            is DomainResult.Success -> ListenableWorker.Result.success()
-            is DomainResult.Error -> ListenableWorker.Result.retry()
-            DomainResult.Loading -> ListenableWorker.Result.retry()
+    override suspend fun doWork(): Result =
+        when (val result = cleanDailyPrices()) {
+            is DomainResult.Success -> Result.success()
+            is DomainResult.Error -> {
+                AppLogger.e("Purga diaria de precios fallida (${result.code.name}): ${result.message}")
+                Result.retry()
+            }
+            DomainResult.Loading -> Result.retry()
         }
 
     companion object {

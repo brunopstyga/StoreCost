@@ -16,5 +16,10 @@
     <string name="email_subject">Reporte Mensual de Ventas - Store Cost</string>
     <string name="email_chooser_title">Enviar reporte mensual</string>
     <string name="email_file_missing">No se encontró el archivo del reporte.</string>
-    <string name="email_open_failed">No se pudo abrir una aplicación de correo: %1$s</string>
+
+    <!-- Compartir archivos / logs -->
+    <string name="share_open_failed">No se pudo compartir el archivo: %1$s</string>
+    <string name="logs_subject">Registros de diagnóstico - Store Cost</string>
+    <string name="logs_chooser_title">Enviar registros de diagnóstico</string>
+    <string name="logs_file_missing">No se encontró el archivo de registros.</string>
 </resources>

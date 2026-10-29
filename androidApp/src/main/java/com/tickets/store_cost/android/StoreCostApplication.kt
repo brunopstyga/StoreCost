@@ -12,6 +12,7 @@ import com.tickets.store_cost.android.R
 import com.tickets.store_cost.android.worker.BiweeklySalesBackupWorker
 import com.tickets.store_cost.android.worker.DailyPriceCleanupWorker
 import com.tickets.store_cost.android.worker.MonthlyReportWorker
+import com.tickets.store_cost.core.logging.AppLogger
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.ksp.generated.com_tickets_store_cost_di_AppModule
@@ -31,6 +32,10 @@ class StoreCostApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // El logger debe inicializarse antes que cualquier otro componente para
+        // capturar los diagnósticos del arranque (Koin, workers, etc.).
+        AppLogger.init(this)
+        AppLogger.i("StoreCostApplication iniciada")
         startKoin {
             androidContext(this@StoreCostApplication)
             modules(

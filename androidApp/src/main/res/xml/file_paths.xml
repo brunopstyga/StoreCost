@@ -3,4 +3,7 @@
     <cache-path
         name="reports"
         path="reports/" />
+    <files-path
+        name="logs"
+        path="logs/" />
 </paths>

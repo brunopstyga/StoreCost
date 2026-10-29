@@ -1,6 +1,7 @@
 package com.tickets.store_cost.domain.model
 
 import androidx.compose.runtime.Immutable
+import com.tickets.store_cost.core.logging.AppLogger
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -52,5 +53,8 @@ suspend fun <T> resultOf(
 } catch (e: CancellationException) {
     throw e
 } catch (e: Exception) {
+    // El stacktrace se preserva en el log local antes de reducir el error a un
+    // estado inmutable para la UI.
+    AppLogger.e("Operación fallida (${code.name})", e)
     Result.Error(code, e.message)
 }
