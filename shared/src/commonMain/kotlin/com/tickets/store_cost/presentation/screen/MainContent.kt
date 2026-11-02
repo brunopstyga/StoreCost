@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.tickets.store_cost.presentation.screen.components.BankQrDialog
 import com.tickets.store_cost.presentation.screen.components.NavigationDrawerContent
 import com.tickets.store_cost.presentation.screen.components.NavigationItem
 import com.tickets.store_cost.resources.Res
@@ -62,6 +63,7 @@ fun MainContent(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var currentRoute by remember { mutableStateOf(Routes.PRICES) }
+    var showBankQr by remember { mutableStateOf(false) }
 
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { entry ->
@@ -84,6 +86,10 @@ fun MainContent(
                         restoreState = true
                     }
                     scope.launch { drawerState.close() }
+                },
+                onBankQrClick = {
+                    scope.launch { drawerState.close() }
+                    showBankQr = true
                 },
                 onShareLogsClick = {
                     scope.launch { drawerState.close() }
@@ -124,5 +130,9 @@ fun MainContent(
                 }
             }
         }
+    }
+
+    if (showBankQr) {
+        BankQrDialog(onDismiss = { showBankQr = false })
     }
 }

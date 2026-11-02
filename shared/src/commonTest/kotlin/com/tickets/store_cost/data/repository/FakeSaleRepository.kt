@@ -33,6 +33,14 @@ class FakeSaleRepository(
         return flowOf(Result.Success(storedSales.toList()))
     }
 
+    override suspend fun deleteSale(id: Long): Result<Unit> {
+        if (shouldReturnError) {
+            return Result.Error(ErrorCode.DELETE_SALE_FAILED, "Database error")
+        }
+        storedSales.removeAll { it.id == id }
+        return Result.Success(Unit)
+    }
+
     override suspend fun deleteSalesBefore(limit: Long): Result<Int> {
         if (shouldFailDeletion) {
             return Result.Error(ErrorCode.DELETE_SALES_FAILED, "Database error")

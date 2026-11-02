@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
@@ -44,9 +43,9 @@ fun AppTheme(
         )
     )
     val shapes = Shapes(
-        small = RoundedCornerShape(4.dp),
-        medium = RoundedCornerShape(4.dp),
-        large = RoundedCornerShape(0.dp)
+        small = RoundedCornerShape(AppStyles.Sizes.cornerSmall),
+        medium = RoundedCornerShape(AppStyles.Sizes.cornerMedium),
+        large = RoundedCornerShape(AppStyles.Sizes.cornerLarge)
     )
 
     MaterialTheme(

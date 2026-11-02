@@ -1029,3 +1029,54 @@ Activar y configurar la ofuscación de código y la compresión de recursos medi
   - [ ] Captura preventiva de excepciones técnicas con `AppLogger.e` aplicada previamente a la emisión de `Result.Error`.
   - [ ] Opción de menú desplegable integrada en la UI para exportar y enviar los registros.
   - *Archivos Creados/Modificados*: (Detallar la lista de clases, manifiestos, recursos XML y componentes UI creados o modificados).
+  
+### **Tarea 10: Animación de Historial, Debounce en Botón, Swipe-to-Dismiss con Confirmación (Popup), Persistencia en Room BD, Centralización de Recursos y Menú Lateral con QR Bancario**
+- **Objetivo**: 
+  1. Implementar retroalimentación visual en el Tag "Historial" (animación de color y bloqueo temporal con *debounce*).
+  2. Crear un componente genérico de **Swipe-to-Dismiss** para eliminación por deslizamiento lateral que dispare un **Pop-up de confirmación** antes de proceder.
+  3. Implementar todo el flujo de eliminación en la **Base de Datos Room (DAO, Repositorio y ViewModel)** tanto para los elementos del historial como para la lista de precios calculados, cubriendo de punta a punta si no existían previamente.
+  4. **Centralizar todos los textos/strings y tamaños/dimensiones** en las clases o archivos de recursos correspondientes de Compose Multiplatform.
+  5. **Integrar un nuevo ítem en el menú lateral (Drawer)** para desplegar el **Código QR y el alias bancario** del usuario.
+  6. Configurar las dependencias necesarias en el Version Catalog (`libs.versions.toml`).
+
+- **Pasos a ejecutar**:
+  1. **Configuración de Dependencias (`gradle/libs.versions.toml`)**:
+     - Asegurar las versiones base de Compose, Room KMP y dependencias de animación/gestos necesarias.
+  2. **Centralización de Recursos y Constantes (`commonMain/`)**:
+     - Mover todos los textos estáticos ("Historial", "Diario", "Mensual", "Registar Venta", "¡Registar! 🟢", títulos y botones del Pop-up de confirmación, "Alias Bancario:", etc.) al sistema de recursos o archivos de constantes tipados.
+     - Guardar las dimensiones y espaciados estandarizados en clases compartidas (`dp` de padding, radios de esquinas, anchos del diálogo de confirmación, etc.).
+  3. **Persistencia y Capa de Datos (Room BD)**:
+     - **DAO (`data/local/dao/`)**: Verificar e implementar los métodos de borrado (`DELETE`) necesarios en las entidades correspondientes para el historial de ventas y los precios calculados.
+     - **Repositorio (`data/repository/`)**: Exponer las funciones de eliminación a través del repositorio compartido.
+     - **ViewModel (`presentation/viewmodel/`)**: Conectar las acciones de borrado al `viewModelScope` llamando al repositorio.
+  4. **Gestión de Estado y Lógica en ViewModel**:
+     - Agregar estados reactivos `isAddingSale: StateFlow<Boolean>` y `showHistoryFlash: StateFlow<Boolean>` para el bloqueo y animación del tag de historial.
+     - Programar el mecanismo de *debounce* en `registarVenta()`.
+     - Añadir estados para el control del Pop-up de confirmación de borrado (ítem seleccionado a eliminar y visibilidad del diálogo).
+  5. **Creación del Componente Genérico de Eliminación con Pop-up (`presentation/component/SwipeToDeleteWithConfirmation.kt`)**:
+     - Desarrollar el componente reutilizable de *swipe-to-dismiss* que interceptes el gesto, prevenga el borrado directo y abra un diálogo modal (`AlertDialog`) solicitando confirmación al usuario ("¿Está seguro que desea eliminar este elemento?").
+     - Si confirma, ejecuta el callback de borrado en la BD; si cancela, restablece la posición del elemento.
+  6. **Implementación del Menú Lateral y Vista de QR (`presentation/navigation/`)**:
+     - Agregar el ítem en el menú lateral usando textos centralizados y crear el componente/diálogo modal para renderizar el QR y el alias bancario.
+  7. **Integración en Pantallas (`commonMain/`)**:
+     - **Pantalla de Historial**: Integrar el componente de deslizamiento con confirmación y aplicar `animateColorAsState` en el Tag.
+     - **Pantalla de Gestión (Precios Calculados)**: Reutilizar exactamente el mismo componente genérico con confirmación para la lista de precios.
+  8. **Pruebas Unitarias (`commonTest/`)**:
+     - Validar operaciones DAO en Room, la lógica de borrado en el repositorio/ViewModel, el flujo del diálogo de confirmación y el comportamiento del *debounce*.
+
+- **Criterio de Aceptación**: 
+  - El botón se deshabilita temporalmente unos segundos al registrar una venta y el Tag "Historial" destella con animación fluida.
+  - Al realizar el gesto de deslizamiento, se despliega un Pop-up de confirmación; la eliminación en la Base de Datos Room solo se efectúa si el usuario acepta explícitamente.
+  - El flujo completo de borrado funciona de forma idéntica y sin duplicación de código tanto en el historial como en la lista de precios calculados.
+  - Al presionar el nuevo ítem del menú lateral, se visualiza correctamente el QR y el alias bancario.
+  - Pruebas unitarias en verde.
+
+- **REPORTE OBLIGATORIO DE FINALIZACIÓN**:
+  - [ ] Librerías configuradas en `libs.versions.toml`.
+  - [ ] Strings y dimens extraídos a clases/archivos de recursos.
+  - [ ] Métodos de borrado implementados en DAOs de Room y Repositorios.
+  - [ ] Flujo de estados, debounce y control de pop-up en ViewModel.
+  - [ ] Componente genérico de Swipe-to-Dismiss con Pop-up de confirmación creado e integrado.
+  - [ ] Ítem de menú lateral y vista de QR bancario implementados.
+  - [ ] Pruebas unitarias ejecutadas con éxito.
+  - *Archivos Creados/Modificados*: (Listar DAOs, Repositorios, ViewModels, componentes genéricos, archivos de recursos, pantallas, menú lateral y configuración).

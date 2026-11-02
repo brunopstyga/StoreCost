@@ -1,17 +1,23 @@
 package com.tickets.store_cost.presentation.screen
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -25,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tickets.store_cost.domain.model.Result
@@ -108,6 +116,9 @@ fun VentasScreen(
         onRequestCloseDay = viewModel::onRequestCloseDay,
         onConfirmCloseDay = viewModel::onConfirmCloseDay,
         onDismissClosingDialog = viewModel::onDismissClosingDialog,
+        onRequestDeleteSale = viewModel::onRequestDeleteSale,
+        onConfirmDeleteSale = viewModel::onConfirmDeleteSale,
+        onDismissDeleteConfirmation = viewModel::onDismissDeleteConfirmation,
         monthlySummary = { modifier ->
             MonthlySummaryRoute(
                 startTime = state.startTime,
@@ -161,6 +172,9 @@ private fun VentasContent(
     onRequestCloseDay: () -> Unit,
     onConfirmCloseDay: () -> Unit,
     onDismissClosingDialog: () -> Unit,
+    onRequestDeleteSale: (Long) -> Unit,
+    onConfirmDeleteSale: () -> Unit,
+    onDismissDeleteConfirmation: () -> Unit,
     monthlySummary: @Composable (Modifier) -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
@@ -176,7 +190,16 @@ private fun VentasContent(
                 Tab(
                     selected = state.period == period,
                     onClick = { onPeriodSelected(period) },
-                    text = { Text(text = stringResource(periodLabel(period))) }
+                    text = {
+                        if (period == ClosingPeriod.HISTORY) {
+                            HistoryTabLabel(isFlashing = state.showHistoryFlash)
+                        } else {
+                            Text(
+                                text = stringResource(periodLabel(period)),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 )
             }
         }
@@ -197,6 +220,12 @@ private fun VentasContent(
                 todayEnd = state.todayEnd,
                 isLoading = state.isLoading,
                 error = state.historyError,
+                pendingDeletionId = state.pendingDeletionId,
+                isDeleting = state.isDeleting,
+                onRequestDelete = onRequestDeleteSale,
+                onConfirmDelete = onConfirmDeleteSale,
+                onDismissDelete = onDismissDeleteConfirmation,
+                deleteError = state.deleteError,
                 modifier = Modifier.weight(1f)
             )
 
@@ -249,6 +278,47 @@ private fun VentasContent(
 }
 
 /**
+ * Etiqueta de la pestaña Historial con un destello de color al registrar una
+ * venta. El fondo y el texto se animan con `animateColorAsState` para indicar
+ * que el listado se actualizó, y vuelven a su estado normal al terminar.
+ */
+@Composable
+private fun HistoryTabLabel(isFlashing: Boolean) {
+    val fadeSpec = tween<Color>(
+        durationMillis = AppStyles.Durations.HISTORY_FLASH_FADE_MS.toInt()
+    )
+    val background by animateColorAsState(
+        targetValue = if (isFlashing) MaterialTheme.colorScheme.primary else Color.Transparent,
+        animationSpec = fadeSpec,
+        label = "historyTabFlashBackground"
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (isFlashing) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            AppStyles.Colors.secondaryText
+        },
+        animationSpec = fadeSpec,
+        label = "historyTabFlashText"
+    )
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppStyles.Sizes.historyFlashCornerRadius))
+            .background(background)
+            .padding(
+                horizontal = AppStyles.Spacing.md,
+                vertical = AppStyles.Spacing.xs
+            )
+    ) {
+        Text(
+            text = stringResource(Res.string.period_history),
+            color = textColor
+        )
+    }
+}
+
+/**
  * Vista de la pestaña Diario: período consultado, formulario de registro
  * directo y cierre del día.
  */
@@ -269,21 +339,6 @@ private fun DailySalesContent(
 
     if (state.isLoading) {
         LoadingBar()
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(Res.string.sales_period, period),
-            style = AppStyles.Typography.caption,
-            color = AppStyles.Colors.secondaryText
-        )
-        TextButton(onClick = onChangeDate) {
-            Text(text = stringResource(Res.string.sales_change_date))
-        }
     }
 
     state.historyError?.let { error ->
@@ -308,10 +363,18 @@ private fun DailySalesContent(
 
     Button(
         onClick = onRegisterSale,
-        enabled = !state.isRegistering,
+        enabled = state.isRegisterButtonEnabled,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(text = stringResource(if (state.isRegistering) Res.string.sales_registering else Res.string.sales_register_button))
+        Text(
+            text = stringResource(
+                if (state.isRegistering || state.isAddingSale) {
+                    Res.string.sales_registering
+                } else {
+                    Res.string.sales_register_button
+                }
+            )
+        )
     }
 
     if (state.isRegistered) {

@@ -42,6 +42,14 @@ class FakeConsultingRepository(
             }
         }
 
+    override suspend fun deleteConsultation(id: Long): Result<Unit> {
+        if (shouldReturnError) {
+            return Result.Error(ErrorCode.DELETE_CONSULTATION_FAILED, "Database error")
+        }
+        consultationsFlow.value = consultationsFlow.value.filterNot { it.id == id }
+        return Result.Success(Unit)
+    }
+
     override suspend fun deleteConsultationsBefore(limit: Long): Result<Int> {
         if (shouldReturnError) {
             return Result.Error(ErrorCode.DELETE_PRICES_FAILED, "Database error")

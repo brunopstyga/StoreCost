@@ -25,6 +25,51 @@ object AppStyles {
         val xl: Dp = 24.dp
     }
 
+    /**
+     * Dimensiones compartidas por componentes que necesitan un tamaño fijo
+     * (diálogos, QR, gestos de deslizamiento).
+     */
+    object Sizes {
+        /** Ancho máximo del formulario de login en pantallas grandes. */
+        val loginFormMaxWidth: Dp = 420.dp
+
+        /** Tamaño del indicador de carga dentro de los botones. */
+        val buttonProgress: Dp = 18.dp
+        val buttonProgressStroke: Dp = 2.dp
+
+        /** Ancho del diálogo de confirmación de borrado. */
+        val confirmationDialogWidth: Dp = 320.dp
+
+        /** Tamaño del código QR del alias bancario. */
+        val qrCode: Dp = 220.dp
+
+        /** Distancia mínima de deslizamiento para pedir confirmación. */
+        val swipeDismissThreshold: Dp = 96.dp
+
+        /** Radio de las esquinas de las filas arrastrables. */
+        val swipeCornerRadius: Dp = 12.dp
+
+        /** Radio del fondo que destella en el tag "Historial". */
+        val historyFlashCornerRadius: Dp = 12.dp
+
+        /** Radios de las formas del tema Material 3. */
+        val cornerSmall: Dp = 4.dp
+        val cornerMedium: Dp = 4.dp
+        val cornerLarge: Dp = 0.dp
+    }
+
+    /** Duraciones (en milisegundos) usadas por la lógica de presentación. */
+    object Durations {
+        /** Tiempo que el botón de venta queda bloqueado tras registrar. */
+        const val SALE_REGISTER_DEBOUNCE_MS: Long = 1_500L
+
+        /** Duración del destello del tag Historial. */
+        const val HISTORY_FLASH_MS: Long = 600L
+
+        /** Duración de la transición de entrada/salida del destello. */
+        const val HISTORY_FLASH_FADE_MS: Long = 180L
+    }
+
     /** Tipografías con un rol semántico dentro de la aplicación. */
     object Typography {
         val appTitle: TextStyle @Composable get() = MaterialTheme.typography.headlineSmall

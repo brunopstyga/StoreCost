@@ -40,6 +40,12 @@ fun TransactionHistorySection(
     todayEnd: Long,
     isLoading: Boolean,
     error: Result.Error?,
+    pendingDeletionId: Long?,
+    isDeleting: Boolean,
+    onRequestDelete: (Long) -> Unit,
+    onConfirmDelete: () -> Unit,
+    onDismissDelete: () -> Unit,
+    deleteError: Result.Error?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -62,6 +68,10 @@ fun TransactionHistorySection(
             ErrorMessage(error.displayMessage())
         }
 
+        deleteError?.let { error ->
+            ErrorMessage(error.displayMessage())
+        }
+
         if (sales.isEmpty()) {
             if (!isLoading) {
                 Text(
@@ -77,10 +87,18 @@ fun TransactionHistorySection(
                 verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.sm)
             ) {
                 items(items = sales, key = { it.id }) { sale ->
-                    SaleHistoryItem(
-                        sale = sale,
-                        isToday = sale.timestamp in todayStart..todayEnd
-                    )
+                    SwipeToDeleteWithConfirmation(
+                        confirmVisible = pendingDeletionId == sale.id,
+                        onDeleteRequested = { onRequestDelete(sale.id) },
+                        onConfirmDelete = onConfirmDelete,
+                        onDismissConfirmation = onDismissDelete,
+                        enabled = !isDeleting
+                    ) {
+                        SaleHistoryItem(
+                            sale = sale,
+                            isToday = sale.timestamp in todayStart..todayEnd
+                        )
+                    }
                 }
             }
         }

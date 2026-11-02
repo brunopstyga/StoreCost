@@ -42,7 +42,11 @@ data class SalesUiState(
     val todayTotal: Double = 0.0,
     val todaySalesCount: Int = 0,
     val pendingClosing: DailyClosing? = null,
-    val closingState: Result<DailyClosing>? = null
+    val closingState: Result<DailyClosing>? = null,
+    val isAddingSale: Boolean = false,
+    val showHistoryFlash: Boolean = false,
+    val pendingDeletionId: Long? = null,
+    val deleteState: Result<Unit>? = null
 ) {
     val totalBilled: Double
         get() = summary.getOrNull()?.totalBilled ?: 0.0
@@ -112,4 +116,23 @@ data class SalesUiState(
 
     val closingErrorMessage: String?
         get() = closingError?.message
+
+    /**
+     * El botón de registro se bloquea durante la petición y durante el
+     * *debounce* posterior para evitar ventas duplicadas por doble toque.
+     */
+    val isRegisterButtonEnabled: Boolean
+        get() = !isRegistering && !isAddingSale
+
+    val isDeleteDialogVisible: Boolean
+        get() = pendingDeletionId != null
+
+    val isDeleting: Boolean
+        get() = deleteState is Result.Loading
+
+    val deleteError: Result.Error?
+        get() = deleteState as? Result.Error
+
+    val deleteErrorMessage: String?
+        get() = deleteError?.message
 }

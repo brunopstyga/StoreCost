@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Aplicación y navegación -->
-    <string name="app_name">Store Cost</string>
+    <string name="app_name">Piel de Luna</string>
     <string name="nav_prices">Gestión de Precios</string>
     <string name="nav_sales">Ventas Diarias y Cierre</string>
     <string name="nav_open_menu">Abrir menú</string>
     <string name="nav_logout">Cerrar Sesión</string>
     <string name="nav_share_logs">Enviar registros de diagnóstico</string>
+    <string name="nav_bank_qr">QR</string>
 
     <!-- Login -->
     <string name="login_title">Piel de luna</string>
@@ -24,6 +25,11 @@
     <string name="common_quantity_label">Cantidad de Unidades</string>
     <string name="common_operations">Operaciones</string>
     <string name="common_operations_count">Operaciones: %1$d</string>
+    <string name="common_delete">Eliminar</string>
+    <string name="common_close">Cerrar</string>
+    <string name="common_delete_confirmation_title">Eliminar elemento</string>
+    <string name="common_delete_confirmation_message">¿Está seguro que desea eliminar este elemento?</string>
+    <string name="common_delete_action">Eliminar</string>
 
     <!-- Gestión de Precios -->
     <string name="prices_base_price_label">Precio Base ($)</string>
@@ -59,6 +65,13 @@
     <string name="history_title">Historial de Transacciones</string>
     <string name="history_empty">Todavía no hay transacciones registradas.</string>
     <string name="history_item_detail">%1$d u. x %2$s</string>
+    <string name="history_delete_swipe">Deslizá para eliminar</string>
+
+    <!-- Datos bancarios / QR -->
+    <string name="bank_qr_title">Cobros por transferencia</string>
+    <string name="bank_qr_hint">Escaneá el código QR o transferí al alias.</string>
+    <string name="bank_alias_label">Alias Bancario:</string>
+    <string name="bank_qr_content_description">Código QR con el alias bancario</string>
 
     <!-- Resumen mensual -->
     <string name="monthly_summary_title">Resumen de %1$s</string>
@@ -109,6 +122,8 @@
     <string name="error_save_report_failed">No se pudo guardar el reporte.</string>
     <string name="error_delete_prices_failed">No se pudieron limpiar las consultas de precios.</string>
     <string name="error_delete_sales_failed">No se pudieron limpiar las ventas antiguas.</string>
+    <string name="error_delete_consultation_failed">No se pudo eliminar la consulta de precio.</string>
+    <string name="error_delete_sale_failed">No se pudo eliminar la venta.</string>
     <string name="error_delete_closings_failed">No se pudieron limpiar los cierres antiguos.</string>
     <string name="error_empty_password">Ingresá la contraseña.</string>
     <string name="error_invalid_password">Contraseña incorrecta.</string>

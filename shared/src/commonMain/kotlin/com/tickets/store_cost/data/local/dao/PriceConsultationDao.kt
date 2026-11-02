@@ -17,6 +17,13 @@ interface PriceConsultationDao {
     fun getAllConsultations(): Flow<List<PriceConsultationEntity>>
 
     /**
+     * Elimina una consulta puntual desde la lista de precios calculados.
+     * Devuelve la cantidad de filas borradas.
+     */
+    @Query("DELETE FROM price_consultations WHERE id = :id")
+    suspend fun deleteConsultationById(id: Long): Int
+
+    /**
      * Elimina las consultas de precios anteriores al límite indicado.
      * Devuelve la cantidad de filas borradas.
      */

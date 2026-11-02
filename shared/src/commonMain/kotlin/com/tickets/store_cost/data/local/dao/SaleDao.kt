@@ -24,6 +24,13 @@ interface SaleDao {
     fun observeSalesByDateRange(startTime: Long, endTime: Long): Flow<List<SaleEntity>>
 
     /**
+     * Elimina una venta puntual desde el historial de transacciones.
+     * Devuelve la cantidad de filas borradas.
+     */
+    @Query("DELETE FROM sales WHERE id = :id")
+    suspend fun deleteSaleById(id: Long): Int
+
+    /**
      * Elimina las ventas anteriores al límite indicado.
      * Devuelve la cantidad de filas borradas.
      */

@@ -7,6 +7,7 @@ import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.usecase.CalculatePriceUseCase
+import com.tickets.store_cost.domain.usecase.DeletePriceConsultationUseCase
 import com.tickets.store_cost.domain.usecase.GetPriceConsultationsUseCase
 import com.tickets.store_cost.domain.usecase.SavePriceConsultationUseCase
 import com.tickets.store_cost.presentation.state.ConsultingUiState
@@ -29,7 +30,8 @@ import org.koin.android.annotation.KoinViewModel
 class ConsultingViewModel(
     private val calculatePriceUseCase: CalculatePriceUseCase,
     private val savePriceConsultationUseCase: SavePriceConsultationUseCase,
-    private val getPriceConsultationsUseCase: GetPriceConsultationsUseCase
+    private val getPriceConsultationsUseCase: GetPriceConsultationsUseCase,
+    private val deletePriceConsultationUseCase: DeletePriceConsultationUseCase
 ) : ViewModel() {
 
     private data class FormState(
@@ -40,6 +42,8 @@ class ConsultingViewModel(
     )
 
     private val formState = MutableStateFlow(FormState())
+    private val pendingDeletionId = MutableStateFlow<Long?>(null)
+    private val deleteState = MutableStateFlow<Result<Unit>?>(null)
 
     /**
      * Historial como `StateFlow` propio: se comparte entre recomposiciones y
@@ -53,13 +57,20 @@ class ConsultingViewModel(
         )
 
     val uiState: StateFlow<ConsultingUiState> =
-        combine(formState, history) { form, consultations ->
+        combine(
+            formState,
+            history,
+            pendingDeletionId,
+            deleteState
+        ) { form, consultations, pendingId, deletion ->
             ConsultingUiState(
                 basePrice = form.basePrice,
                 quantity = form.quantity,
                 selectedModality = form.selectedModality,
                 consultations = consultations,
-                saveState = form.saveState
+                saveState = form.saveState,
+                pendingDeletionId = pendingId,
+                deleteState = deletion
             )
         }.stateIn(
             scope = viewModelScope,
@@ -118,6 +129,33 @@ class ConsultingViewModel(
                 )
             )
             formState.update { it.copy(saveState = result) }
+        }
+    }
+
+    /**
+     * El gesto de deslizamiento solo solicita el borrado: la fila permanece en
+     * la lista hasta que el usuario confirma el diálogo.
+     */
+    fun onRequestDeleteConsultation(id: Long) {
+        pendingDeletionId.value = id
+        deleteState.value = null
+    }
+
+    fun onDismissDeleteConfirmation() {
+        pendingDeletionId.value = null
+        deleteState.value = null
+    }
+
+    fun onConfirmDeleteConsultation() {
+        val id = pendingDeletionId.value ?: return
+
+        viewModelScope.launch {
+            deleteState.value = Result.Loading
+            val result = deletePriceConsultationUseCase(id)
+            deleteState.value = result
+            if (result is Result.Success) {
+                pendingDeletionId.value = null
+            }
         }
     }
 }

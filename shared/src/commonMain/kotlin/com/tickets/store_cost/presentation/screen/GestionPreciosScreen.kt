@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,10 +29,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
+import com.tickets.store_cost.presentation.screen.components.AppCard
 import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
 import com.tickets.store_cost.presentation.screen.components.ErrorMessage
 import com.tickets.store_cost.presentation.screen.components.SectionTitle
 import com.tickets.store_cost.presentation.screen.components.SuccessMessage
+import com.tickets.store_cost.presentation.screen.components.SwipeToDeleteWithConfirmation
 import com.tickets.store_cost.presentation.state.ConsultingUiState
 import com.tickets.store_cost.presentation.theme.AppStyles
 import com.tickets.store_cost.presentation.util.displayName
@@ -72,7 +73,10 @@ fun GestionPreciosScreen(
         onBasePriceChange = viewModel::onBasePriceChange,
         onQuantityChange = viewModel::onQuantityChange,
         onModalitySelected = viewModel::onModalitySelected,
-        onConsultPrices = viewModel::onConsultPrices
+        onConsultPrices = viewModel::onConsultPrices,
+        onRequestDeleteConsultation = viewModel::onRequestDeleteConsultation,
+        onConfirmDeleteConsultation = viewModel::onConfirmDeleteConsultation,
+        onDismissDeleteConfirmation = viewModel::onDismissDeleteConfirmation
     )
 }
 
@@ -82,7 +86,10 @@ private fun GestionPreciosContent(
     onBasePriceChange: (String) -> Unit,
     onQuantityChange: (String) -> Unit,
     onModalitySelected: (OperationType) -> Unit,
-    onConsultPrices: () -> Unit
+    onConsultPrices: () -> Unit,
+    onRequestDeleteConsultation: (Long) -> Unit,
+    onConfirmDeleteConsultation: () -> Unit,
+    onDismissDeleteConfirmation: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -116,15 +123,23 @@ private fun GestionPreciosContent(
 
         SectionTitle(text = stringResource(Res.string.prices_calculated_list))
 
-        Card(
+        ConsultationList(
+            consultations = state.consultations,
+            pendingDeletionId = state.pendingDeletionId,
+            isDeleting = state.isDeleting,
+            onRequestDelete = onRequestDeleteConsultation,
+            onConfirmDelete = onConfirmDeleteConsultation,
+            onDismissDelete = onDismissDeleteConfirmation,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-        ) {
-            ConsultationList(consultations = state.consultations)
-        }
+        )
 
         state.saveError?.let { error ->
+            ErrorMessage(error.displayMessage())
+        }
+
+        state.deleteError?.let { error ->
             ErrorMessage(error.displayMessage())
         }
 
@@ -188,17 +203,25 @@ private fun ModalityDropdown(
 }
 
 @Composable
-private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
+private fun ConsultationList(
+    consultations: Result<List<PriceConsultation>>,
+    pendingDeletionId: Long?,
+    isDeleting: Boolean,
+    onRequestDelete: (Long) -> Unit,
+    onConfirmDelete: () -> Unit,
+    onDismissDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     when (consultations) {
         is Result.Loading -> Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
         }
 
         is Result.Error -> Box(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(AppStyles.Spacing.lg),
             contentAlignment = Alignment.Center
@@ -211,7 +234,7 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
             // composición no debe volver a ordenar en cada recomposición.
             if (consultations.data.isEmpty()) {
                 Box(
-                    modifier = Modifier
+                    modifier = modifier
                         .fillMaxSize()
                         .padding(AppStyles.Spacing.lg),
                     contentAlignment = Alignment.Center
@@ -224,13 +247,21 @@ private fun ConsultationList(consultations: Result<List<PriceConsultation>>) {
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(AppStyles.Spacing.lg),
-                    verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
+                    modifier = modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.sm)
                 ) {
                     items(items = consultations.data, key = { it.id }) { consultation ->
-                        ConsultationRow(consultation = consultation)
+                        SwipeToDeleteWithConfirmation(
+                            confirmVisible = pendingDeletionId == consultation.id,
+                            onDeleteRequested = { onRequestDelete(consultation.id) },
+                            onConfirmDelete = onConfirmDelete,
+                            onDismissConfirmation = onDismissDelete,
+                            enabled = !isDeleting
+                        ) {
+                            AppCard {
+                                ConsultationRow(consultation = consultation)
+                            }
+                        }
                     }
                 }
             }

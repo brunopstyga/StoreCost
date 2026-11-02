@@ -16,7 +16,9 @@ data class ConsultingUiState(
     val quantity: String = "1",
     val selectedModality: OperationType = OperationType.FACTURA_A,
     val consultations: Result<List<PriceConsultation>> = Result.Loading,
-    val saveState: Result<Unit>? = null
+    val saveState: Result<Unit>? = null,
+    val pendingDeletionId: Long? = null,
+    val deleteState: Result<Unit>? = null
 ) {
     val isSaving: Boolean
         get() = saveState is Result.Loading
@@ -38,4 +40,20 @@ data class ConsultingUiState(
 
     val errorMessage: String?
         get() = saveErrorMessage ?: historyErrorMessage
+
+    /**
+     * `true` mientras el diálogo de confirmación de borrado está visible.
+     * El ViewModel conserva el id seleccionado para que la UI no duplique estado.
+     */
+    val isDeleteDialogVisible: Boolean
+        get() = pendingDeletionId != null
+
+    val isDeleting: Boolean
+        get() = deleteState is Result.Loading
+
+    val deleteError: Result.Error?
+        get() = deleteState as? Result.Error
+
+    val deleteErrorMessage: String?
+        get() = deleteError?.message
 }

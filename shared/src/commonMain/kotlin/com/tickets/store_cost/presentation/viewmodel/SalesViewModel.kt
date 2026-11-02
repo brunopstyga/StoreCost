@@ -10,6 +10,7 @@ import com.tickets.store_cost.domain.model.Sale
 import com.tickets.store_cost.domain.model.SalesSummary
 import com.tickets.store_cost.domain.model.getOrNull
 import com.tickets.store_cost.domain.usecase.CloseDayUseCase
+import com.tickets.store_cost.domain.usecase.DeleteSaleUseCase
 import com.tickets.store_cost.domain.usecase.GetDailyClosingUseCase
 import com.tickets.store_cost.domain.usecase.GetSalesSummaryUseCase
 import com.tickets.store_cost.domain.usecase.RegisterSaleUseCase
@@ -19,7 +20,9 @@ import com.tickets.store_cost.domain.util.toDayRange
 import com.tickets.store_cost.domain.util.toMonthRange
 import com.tickets.store_cost.presentation.state.ClosingPeriod
 import com.tickets.store_cost.presentation.state.SalesUiState
+import com.tickets.store_cost.presentation.theme.AppStyles
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -45,7 +48,8 @@ class SalesViewModel(
     private val registerSaleUseCase: RegisterSaleUseCase,
     private val getSalesSummaryUseCase: GetSalesSummaryUseCase,
     private val closeDayUseCase: CloseDayUseCase,
-    private val getDailyClosingUseCase: GetDailyClosingUseCase
+    private val getDailyClosingUseCase: GetDailyClosingUseCase,
+    private val deleteSaleUseCase: DeleteSaleUseCase
 ) : ViewModel() {
 
     private data class FormState(
@@ -65,6 +69,15 @@ class SalesViewModel(
     private val todayRange = MutableStateFlow(currentDayRange())
     private val closingState = MutableStateFlow<Result<DailyClosing>?>(null)
     private val pendingClosing = MutableStateFlow<DailyClosing?>(null)
+
+    /** Bloqueo temporal del botón de registro para evitar dobles ventas. */
+    private val addingSale = MutableStateFlow(false)
+
+    /** Destello del tag "Historial" al registrarse una venta. */
+    private val historyFlash = MutableStateFlow(false)
+
+    private val pendingDeletionId = MutableStateFlow<Long?>(null)
+    private val deleteState = MutableStateFlow<Result<Unit>?>(null)
 
     /**
      * Resumen del día actual, usado para habilitar el botón de cierre.
@@ -118,21 +131,37 @@ class SalesViewModel(
             )
         }
 
-    val salesUiState: StateFlow<SalesUiState> =
-        combine(
-            baseState,
-            todaySummary,
-            closingState,
-            pendingClosing,
-            todayRange
-        ) { base, today, closing, pending, dayRange ->
+    private val feedbackState: Flow<Pair<Boolean, Boolean>> =
+        combine(addingSale, historyFlash) { adding, flash -> adding to flash }
+
+    private val deletionState: Flow<Pair<Long?, Result<Unit>?>> =
+        combine(pendingDeletionId, deleteState) { id, state -> id to state }
+
+    private val coreState: Flow<SalesUiState> =
+        combine(baseState, todaySummary, closingState) { base, today, closing ->
             base.copy(
-                todayStart = dayRange.first,
-                todayEnd = dayRange.second,
                 todayTotal = today.getOrNull()?.totalBilled ?: 0.0,
                 todaySalesCount = today.getOrNull()?.totalSalesCount ?: 0,
-                pendingClosing = pending,
                 closingState = closing
+            )
+        }
+
+    val salesUiState: StateFlow<SalesUiState> =
+        combine(
+            coreState,
+            pendingClosing,
+            todayRange,
+            feedbackState,
+            deletionState
+        ) { core, pending, dayRange, feedback, deletion ->
+            core.copy(
+                todayStart = dayRange.first,
+                todayEnd = dayRange.second,
+                pendingClosing = pending,
+                isAddingSale = feedback.first,
+                showHistoryFlash = feedback.second,
+                pendingDeletionId = deletion.first,
+                deleteState = deletion.second
             )
         }.stateIn(
             scope = viewModelScope,
@@ -156,8 +185,15 @@ class SalesViewModel(
      * Registra una venta directa con el importe y la cantidad ingresados.
      * El importe ya incluye la modalidad, por lo que se persiste tal cual
      * (sin volver a aplicar recargos).
+     *
+     * El flag [addingSale] actúa como *debounce*: mientras está activo se
+     * ignoran nuevos toques y el botón permanece deshabilitado, incluso
+     * después de completarse la persistencia. Al finalizar se destella el tag
+     * "Historial" para avisar que el listado se actualizó.
      */
     fun onRegisterSale() {
+        if (addingSale.value) return
+
         val current = formState.value
         val amount = current.amount.toDoubleOrNull()
         val quantity = current.quantity.toIntOrNull()
@@ -171,23 +207,39 @@ class SalesViewModel(
             return
         }
 
+        addingSale.value = true
         viewModelScope.launch {
-            formState.update { it.copy(registerState = Result.Loading) }
+            try {
+                formState.update { it.copy(registerState = Result.Loading) }
 
-            val unitPrice = amount.roundToCents()
-            val subtotal = (unitPrice * quantity).roundToCents()
+                val unitPrice = amount.roundToCents()
+                val subtotal = (unitPrice * quantity).roundToCents()
 
-            val result = registerSaleUseCase(
-                Sale(
-                    basePrice = unitPrice,
-                    quantity = quantity,
-                    operationType = DEFAULT_OPERATION_TYPE,
-                    unitPrice = unitPrice,
-                    subtotal = subtotal,
-                    timestamp = Clock.System.now().toEpochMilliseconds()
+                val result = registerSaleUseCase(
+                    Sale(
+                        basePrice = unitPrice,
+                        quantity = quantity,
+                        operationType = DEFAULT_OPERATION_TYPE,
+                        unitPrice = unitPrice,
+                        subtotal = subtotal,
+                        timestamp = Clock.System.now().toEpochMilliseconds()
+                    )
                 )
-            )
-            formState.update { it.copy(registerState = result) }
+                formState.update { it.copy(registerState = result) }
+
+                if (result is Result.Success) {
+                    historyFlash.value = true
+                    delay(AppStyles.Durations.HISTORY_FLASH_MS)
+                    historyFlash.value = false
+                    delay(
+                        AppStyles.Durations.SALE_REGISTER_DEBOUNCE_MS -
+                            AppStyles.Durations.HISTORY_FLASH_MS
+                    )
+                }
+            } finally {
+                historyFlash.value = false
+                addingSale.value = false
+            }
         }
     }
 
@@ -259,6 +311,33 @@ class SalesViewModel(
 
     fun onDismissClosingDialog() {
         pendingClosing.value = null
+    }
+
+    /**
+     * El deslizamiento solo solicita confirmación; la venta se mantiene en la
+     * lista hasta que el usuario acepta el diálogo.
+     */
+    fun onRequestDeleteSale(id: Long) {
+        pendingDeletionId.value = id
+        deleteState.value = null
+    }
+
+    fun onDismissDeleteConfirmation() {
+        pendingDeletionId.value = null
+        deleteState.value = null
+    }
+
+    fun onConfirmDeleteSale() {
+        val id = pendingDeletionId.value ?: return
+
+        viewModelScope.launch {
+            deleteState.value = Result.Loading
+            val result = deleteSaleUseCase(id)
+            deleteState.value = result
+            if (result is Result.Success) {
+                pendingDeletionId.value = null
+            }
+        }
     }
 
     private fun loadTodayClosing() {

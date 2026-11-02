@@ -28,6 +28,8 @@ class SaleRepositoryImplTest {
         private val gate: CompletableDeferred<Unit>? = null
     ) : SaleDao {
 
+        var deletedSaleId: Long? = null
+
         override suspend fun insertSale(sale: SaleEntity) = Unit
 
         override fun observeSalesByDateRange(
@@ -37,6 +39,11 @@ class SaleRepositoryImplTest {
             gate?.await()
             failure?.let { throw it }
             emit(sales)
+        }
+
+        override suspend fun deleteSaleById(id: Long): Int {
+            deletedSaleId = id
+            return 1
         }
 
         override suspend fun deleteSalesBefore(limit: Long): Int = 0
@@ -73,6 +80,17 @@ class SaleRepositoryImplTest {
 
         val error = assertIs<Result.Error>(result)
         assertTrue(error.message.contains("boom"))
+    }
+
+    @Test
+    fun testDeleteSaleDelegatesToDao() = runTest {
+        val dao = FakeSaleDao(listOf(saleEntity()))
+        val repository = SaleRepositoryImpl(dao)
+
+        val result = repository.deleteSale(42L)
+
+        assertIs<Result.Success<Unit>>(result)
+        assertEquals(42L, dao.deletedSaleId)
     }
 
     /**

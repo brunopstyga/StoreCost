@@ -42,6 +42,12 @@ class ConsultingRepositoryImpl(
                 emit(Result.Error(ErrorCode.FETCH_CONSULTATIONS_FAILED, e.message))
             }
 
+    override suspend fun deleteConsultation(id: Long): Result<Unit> =
+        resultOf(ErrorCode.DELETE_CONSULTATION_FAILED) {
+            priceConsultationDao.deleteConsultationById(id)
+            Unit
+        }
+
     override suspend fun deleteConsultationsBefore(limit: Long): Result<Int> =
         resultOf(ErrorCode.DELETE_PRICES_FAILED) {
             priceConsultationDao.deleteConsultationsBefore(limit)

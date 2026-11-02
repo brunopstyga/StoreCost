@@ -29,7 +29,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import com.tickets.store_cost.presentation.screen.components.AppOutlinedTextField
 import com.tickets.store_cost.presentation.screen.components.ErrorMessage
 import com.tickets.store_cost.presentation.state.LoginUiState
@@ -80,7 +79,7 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = 420.dp)
+                .widthIn(max = AppStyles.Sizes.loginFormMaxWidth)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(AppStyles.Spacing.md)
@@ -137,8 +136,8 @@ fun LoginScreen(
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(AppStyles.Sizes.buttonProgress),
+                        strokeWidth = AppStyles.Sizes.buttonProgressStroke,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(modifier = Modifier.width(AppStyles.Spacing.sm))

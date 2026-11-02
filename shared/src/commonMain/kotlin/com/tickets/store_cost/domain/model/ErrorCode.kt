@@ -35,6 +35,10 @@ enum class ErrorCode {
     DELETE_SALES_FAILED,
     DELETE_CLOSINGS_FAILED,
 
+    // Eliminación manual desde la UI
+    DELETE_CONSULTATION_FAILED,
+    DELETE_SALE_FAILED,
+
     // Autenticación local
     EMPTY_PASSWORD,
     INVALID_PASSWORD,

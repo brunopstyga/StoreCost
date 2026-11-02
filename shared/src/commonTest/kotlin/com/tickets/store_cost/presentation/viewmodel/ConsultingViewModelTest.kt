@@ -5,6 +5,7 @@ import com.tickets.store_cost.domain.model.OperationType
 import com.tickets.store_cost.domain.model.PriceConsultation
 import com.tickets.store_cost.domain.model.Result
 import com.tickets.store_cost.domain.usecase.CalculatePriceUseCase
+import com.tickets.store_cost.domain.usecase.DeletePriceConsultationUseCase
 import com.tickets.store_cost.domain.usecase.GetPriceConsultationsUseCase
 import com.tickets.store_cost.domain.usecase.SavePriceConsultationUseCase
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -36,12 +38,26 @@ class ConsultingViewModelTest {
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         repository = FakeConsultingRepository()
-        viewModel = ConsultingViewModel(
+        viewModel = buildViewModel(repository)
+    }
+
+    private fun buildViewModel(repository: FakeConsultingRepository): ConsultingViewModel =
+        ConsultingViewModel(
             calculatePriceUseCase = CalculatePriceUseCase(),
             savePriceConsultationUseCase = SavePriceConsultationUseCase(repository),
-            getPriceConsultationsUseCase = GetPriceConsultationsUseCase(repository)
+            getPriceConsultationsUseCase = GetPriceConsultationsUseCase(repository),
+            deletePriceConsultationUseCase = DeletePriceConsultationUseCase(repository)
         )
-    }
+
+    private fun sampleConsultation(id: Long = 1L): PriceConsultation = PriceConsultation(
+        id = id,
+        basePrice = 1000.0,
+        quantity = 1,
+        selectedModality = OperationType.FACTURA_A.name,
+        calculatedUnitPrice = 1210.0,
+        calculatedSubtotal = 1210.0,
+        timestamp = 1_000L
+    )
 
     @AfterTest
     fun tearDown() {
@@ -208,5 +224,79 @@ class ConsultingViewModelTest {
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.saveState)
+    }
+
+    @Test
+    fun testRequestDeleteConsultationShowsConfirmationWithoutDeleting() = runTest(dispatcher) {
+        val localRepository = FakeConsultingRepository(listOf(sampleConsultation()))
+        val localViewModel = buildViewModel(localRepository)
+        backgroundScope.launch { localViewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        localViewModel.onRequestDeleteConsultation(1L)
+        advanceUntilIdle()
+
+        val state = localViewModel.uiState.value
+        assertTrue(state.isDeleteDialogVisible)
+        assertEquals(1L, state.pendingDeletionId)
+        assertEquals(1, localRepository.storedConsultations.size)
+        assertNull(state.deleteState)
+    }
+
+    @Test
+    fun testConfirmDeleteConsultationRemovesItFromHistory() = runTest(dispatcher) {
+        val localRepository = FakeConsultingRepository(listOf(sampleConsultation()))
+        val localViewModel = buildViewModel(localRepository)
+        backgroundScope.launch { localViewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        localViewModel.onRequestDeleteConsultation(1L)
+        advanceUntilIdle()
+        localViewModel.onConfirmDeleteConsultation()
+        advanceUntilIdle()
+
+        val state = localViewModel.uiState.value
+        assertNull(state.pendingDeletionId)
+        assertFalse(state.isDeleteDialogVisible)
+        assertIs<Result.Success<Unit>>(state.deleteState)
+        assertTrue(localRepository.storedConsultations.isEmpty())
+        val consultations = assertIs<Result.Success<List<PriceConsultation>>>(state.consultations)
+        assertTrue(consultations.data.isEmpty())
+    }
+
+    @Test
+    fun testCancelDeleteConsultationKeepsTheItem() = runTest(dispatcher) {
+        val localRepository = FakeConsultingRepository(listOf(sampleConsultation()))
+        val localViewModel = buildViewModel(localRepository)
+        backgroundScope.launch { localViewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        localViewModel.onRequestDeleteConsultation(1L)
+        advanceUntilIdle()
+        localViewModel.onDismissDeleteConfirmation()
+        advanceUntilIdle()
+
+        val state = localViewModel.uiState.value
+        assertNull(state.pendingDeletionId)
+        assertEquals(1, localRepository.storedConsultations.size)
+    }
+
+    @Test
+    fun testDeleteConsultationErrorIsShown() = runTest(dispatcher) {
+        val localRepository = FakeConsultingRepository(listOf(sampleConsultation()))
+        val localViewModel = buildViewModel(localRepository)
+        backgroundScope.launch { localViewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        localRepository.shouldReturnError = true
+        localViewModel.onRequestDeleteConsultation(1L)
+        advanceUntilIdle()
+        localViewModel.onConfirmDeleteConsultation()
+        advanceUntilIdle()
+
+        val state = localViewModel.uiState.value
+        assertIs<Result.Error>(state.deleteState)
+        assertNotNull(state.deleteErrorMessage)
+        assertEquals(1L, state.pendingDeletionId)
     }
 }

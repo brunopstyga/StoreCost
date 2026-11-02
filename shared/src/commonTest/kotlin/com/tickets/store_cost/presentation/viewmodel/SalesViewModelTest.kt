@@ -11,6 +11,7 @@ import com.tickets.store_cost.domain.repository.IClosingRepository
 import com.tickets.store_cost.domain.repository.ISaleRepository
 import com.tickets.store_cost.domain.usecase.CalculatePriceUseCase
 import com.tickets.store_cost.domain.usecase.CloseDayUseCase
+import com.tickets.store_cost.domain.usecase.DeleteSaleUseCase
 import com.tickets.store_cost.domain.usecase.GetDailyClosingUseCase
 import com.tickets.store_cost.domain.usecase.GetSalesSummaryUseCase
 import com.tickets.store_cost.domain.usecase.RegisterSaleUseCase
@@ -27,6 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
@@ -92,7 +94,8 @@ class SalesViewModelTest {
             registerSaleUseCase = RegisterSaleUseCase(saleRepository, CalculatePriceUseCase()),
             getSalesSummaryUseCase = GetSalesSummaryUseCase(saleRepository),
             closeDayUseCase = CloseDayUseCase(saleRepository, closingRepo),
-            getDailyClosingUseCase = GetDailyClosingUseCase(closingRepo)
+            getDailyClosingUseCase = GetDailyClosingUseCase(closingRepo),
+            deleteSaleUseCase = DeleteSaleUseCase(saleRepository)
         )
 
     private fun todayIso(): String = Clock.System.now()
@@ -186,6 +189,8 @@ class SalesViewModelTest {
                 endTime: Long
             ): Flow<Result<List<Sale>>> =
                 flowOf(Result.Error(ErrorCode.FETCH_SALES_FAILED, "Base de datos no disponible"))
+
+            override suspend fun deleteSale(id: Long): Result<Unit> = Result.Success(Unit)
 
             override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
         })
@@ -371,6 +376,8 @@ class SalesViewModelTest {
                 return flowOf(Result.Success(historicalSales.filter { it.timestamp in startTime..endTime }))
             }
 
+            override suspend fun deleteSale(id: Long): Result<Unit> = Result.Success(Unit)
+
             override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
         }
         val historyViewModel = buildViewModel(historyRepository)
@@ -468,6 +475,121 @@ class SalesViewModelTest {
 
         assertEquals(3, historyViewModel.salesUiState.value.sales.size)
     }
+
+    @Test
+    fun testRegisterSaleDebouncesButtonAndFlashesHistoryTag() = runTest(dispatcher) {
+        backgroundScope.launch { viewModel.salesUiState.collect {} }
+
+        viewModel.onAmountChange("1000")
+        viewModel.onQuantityChange("1")
+        viewModel.onRegisterSale()
+        runCurrent()
+
+        val during = viewModel.salesUiState.value
+        assertTrue(during.isAddingSale)
+        assertFalse(during.isRegisterButtonEnabled)
+        assertTrue(during.showHistoryFlash)
+
+        advanceUntilIdle()
+
+        val after = viewModel.salesUiState.value
+        assertFalse(after.isAddingSale)
+        assertTrue(after.isRegisterButtonEnabled)
+        assertFalse(after.showHistoryFlash)
+    }
+
+    @Test
+    fun testRepeatedTapDuringDebounceRegistersOnlyOnce() = runTest(dispatcher) {
+        val historyRepository = InMemorySaleRepository(emptyList())
+        val historyViewModel = buildViewModel(historyRepository)
+        backgroundScope.launch { historyViewModel.salesUiState.collect {} }
+
+        historyViewModel.onAmountChange("500")
+        historyViewModel.onQuantityChange("1")
+        historyViewModel.onRegisterSale()
+        runCurrent()
+
+        // Segundo toque mientras el botón está bloqueado: debe ignorarse.
+        historyViewModel.onRegisterSale()
+        advanceUntilIdle()
+
+        assertEquals(1, historyRepository.sales.size)
+    }
+
+    @Test
+    fun testRequestDeleteSaleShowsConfirmationWithoutDeleting() = runTest(dispatcher) {
+        val historyRepository = InMemorySaleRepository(sampleSales())
+        val historyViewModel = buildViewModel(historyRepository)
+        backgroundScope.launch { historyViewModel.salesUiState.collect {} }
+        historyViewModel.onPeriodSelected(ClosingPeriod.HISTORY)
+        advanceUntilIdle()
+
+        historyViewModel.onRequestDeleteSale(1L)
+        advanceUntilIdle()
+
+        val state = historyViewModel.salesUiState.value
+        assertTrue(state.isDeleteDialogVisible)
+        assertEquals(1L, state.pendingDeletionId)
+        assertEquals(2, state.sales.size)
+        assertNull(state.deleteState)
+    }
+
+    @Test
+    fun testConfirmDeleteSaleRemovesItFromHistory() = runTest(dispatcher) {
+        val historyRepository = InMemorySaleRepository(sampleSales())
+        val historyViewModel = buildViewModel(historyRepository)
+        backgroundScope.launch { historyViewModel.salesUiState.collect {} }
+        historyViewModel.onPeriodSelected(ClosingPeriod.HISTORY)
+        advanceUntilIdle()
+
+        historyViewModel.onRequestDeleteSale(1L)
+        advanceUntilIdle()
+        historyViewModel.onConfirmDeleteSale()
+        advanceUntilIdle()
+
+        val state = historyViewModel.salesUiState.value
+        assertNull(state.pendingDeletionId)
+        assertFalse(state.isDeleteDialogVisible)
+        assertIs<Result.Success<Unit>>(state.deleteState)
+        assertEquals(1, state.sales.size)
+        assertTrue(state.sales.none { it.id == 1L })
+    }
+
+    @Test
+    fun testCancelDeleteSaleKeepsTheTransaction() = runTest(dispatcher) {
+        val historyRepository = InMemorySaleRepository(sampleSales())
+        val historyViewModel = buildViewModel(historyRepository)
+        backgroundScope.launch { historyViewModel.salesUiState.collect {} }
+        historyViewModel.onPeriodSelected(ClosingPeriod.HISTORY)
+        advanceUntilIdle()
+
+        historyViewModel.onRequestDeleteSale(1L)
+        advanceUntilIdle()
+        historyViewModel.onDismissDeleteConfirmation()
+        advanceUntilIdle()
+
+        val state = historyViewModel.salesUiState.value
+        assertNull(state.pendingDeletionId)
+        assertEquals(2, state.sales.size)
+        assertEquals(2, historyRepository.sales.size)
+    }
+
+    @Test
+    fun testDeleteSaleErrorIsShownAndKeepsItem() = runTest(dispatcher) {
+        repository.shouldReturnError = true
+        backgroundScope.launch { viewModel.salesUiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onRequestDeleteSale(1L)
+        advanceUntilIdle()
+        viewModel.onConfirmDeleteSale()
+        advanceUntilIdle()
+
+        val state = viewModel.salesUiState.value
+        assertIs<Result.Error>(state.deleteState)
+        assertNotNull(state.deleteErrorMessage)
+        assertEquals(1L, state.pendingDeletionId)
+    }
 }
 
 /**
@@ -477,6 +599,9 @@ class SalesViewModelTest {
 private class InMemorySaleRepository(initialSales: List<Sale>) : ISaleRepository {
 
     private val salesFlow = MutableStateFlow(initialSales)
+
+    val sales: List<Sale>
+        get() = salesFlow.value
 
     override suspend fun registerSale(sale: Sale): Result<Unit> {
         salesFlow.update { current ->
@@ -489,6 +614,11 @@ private class InMemorySaleRepository(initialSales: List<Sale>) : ISaleRepository
         salesFlow.map { sales ->
             Result.Success(sales.filter { it.timestamp in startTime..endTime })
         }
+
+    override suspend fun deleteSale(id: Long): Result<Unit> {
+        salesFlow.update { sales -> sales.filterNot { it.id == id } }
+        return Result.Success(Unit)
+    }
 
     override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
 }

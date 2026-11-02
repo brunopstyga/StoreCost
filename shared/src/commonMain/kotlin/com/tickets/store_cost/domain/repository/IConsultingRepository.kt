@@ -14,6 +14,11 @@ interface IConsultingRepository {
     fun getAllConsultations(): Flow<Result<List<PriceConsultation>>>
 
     /**
+     * Elimina una consulta puntual del historial de precios calculados.
+     */
+    suspend fun deleteConsultation(id: Long): Result<Unit>
+
+    /**
      * Elimina las consultas de precios anteriores a [limit] (epoch en
      * milisegundos) y devuelve la cantidad de registros borrados.
      */

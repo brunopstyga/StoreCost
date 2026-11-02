@@ -9,6 +9,11 @@ interface ISaleRepository {
     fun getSalesByDateRange(startTime: Long, endTime: Long): Flow<Result<List<Sale>>>
 
     /**
+     * Elimina una venta puntual del historial de transacciones.
+     */
+    suspend fun deleteSale(id: Long): Result<Unit>
+
+    /**
      * Elimina las ventas anteriores a [limit] (epoch en milisegundos) y
      * devuelve la cantidad de registros borrados.
      */

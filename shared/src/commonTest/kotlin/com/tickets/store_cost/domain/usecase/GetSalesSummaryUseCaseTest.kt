@@ -21,6 +21,8 @@ class GetSalesSummaryUseCaseTest {
             return flowOf(Result.Success(sales))
         }
 
+        override suspend fun deleteSale(id: Long): Result<Unit> = Result.Success(Unit)
+
         override suspend fun deleteSalesBefore(limit: Long): Result<Int> = Result.Success(0)
     }
 
